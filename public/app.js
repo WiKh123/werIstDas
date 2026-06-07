@@ -21,6 +21,7 @@ let lastRoomState = null;
 let lastCurrentRound = -99;
 let hostTimerInterval = null;
 let roundEndedFlag = false;
+let hasSkippedThisRound = false;
 let roomRef = null;
 let currentPoolSize = PERSONS.length;
 let currentRoomSnapshot = null;
@@ -365,7 +366,13 @@ function handleRoom(room) {
     if(me) document.getElementById('my-score').textContent=`${me.score} Pkt.`;
     const imgEl=document.getElementById('person-image');
     if(room.currentImageUrl && imgEl.getAttribute('src')!==room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
+    updateSkipButton(room);
     if(isHost&&room.guesses) hostProcessGuesses(room);
+    if(isHost&&room.skipVotes) {
+      const votes=Object.keys(room.skipVotes).length;
+      const total=Object.keys(players||{}).length;
+      if(votes>=total) hostEndRound();
+    }
     return;
   }
 
@@ -405,6 +412,7 @@ function setImage(imgEl, src) {
 
 function startRoundUI(room) {
   hasGuessedThisRound=false;
+  hasSkippedThisRound=false;
   const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
@@ -420,10 +428,18 @@ function startRoundUI(room) {
   const imgEl=document.getElementById('person-image');
   imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
   if(room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
-  const skipDiv=document.getElementById('host-skip');
-  if(skipDiv) skipDiv.classList.toggle('hidden',!isHost);
+  updateSkipButton(room);
   if(isHost) startHostTimer();
   showScreen('game');
+}
+
+function updateSkipButton(room) {
+  const btn=document.getElementById('btn-skip');
+  if(!btn) return;
+  const votes=room.skipVotes ? Object.keys(room.skipVotes).length : 0;
+  const total=room.players ? Object.keys(room.players).length : 1;
+  btn.textContent=`Aufgeben (${votes}/${total})`;
+  btn.disabled=hasSkippedThisRound;
 }
 
 // ── Player: Submit Guess ──────────────────────────────────────────────────
@@ -447,6 +463,15 @@ async function doGuess() {
     fb.className='wrong';
     document.getElementById('guess-input').select();
   }
+}
+
+// ── Skip / Aufgeben ───────────────────────────────────────────────────────
+async function doSkip() {
+  if(hasSkippedThisRound||!currentRoomSnapshot) return;
+  hasSkippedThisRound=true;
+  const btn=document.getElementById('btn-skip');
+  if(btn) btn.disabled=true;
+  await db.ref(`rooms/${roomCode}/skipVotes/${uid}`).set(true);
 }
 
 // ── Host Timer ────────────────────────────────────────────────────────────
@@ -516,7 +541,7 @@ async function hostStartGame() {
       ...resets,
       totalRounds:rounds.length, rounds,
       state:'playing', currentRound:0,
-      timeLeft:30, roundResult:null, guesses:null,
+      timeLeft:30, roundResult:null, guesses:null, skipVotes:null,
       currentImageUrl:firstImageUrl,
     });
     rounds.slice(1).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
@@ -548,7 +573,7 @@ async function hostNextRound() {
     await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       state:'playing', currentRound:nextRound,
-      timeLeft:30, roundResult:null, guesses:null,
+      timeLeft:30, roundResult:null, guesses:null, skipVotes:null,
       currentImageUrl:nextImageUrl,
     });
   } catch(e) {
@@ -598,7 +623,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('pool-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addPersonToPool();});
 
   document.getElementById('btn-start').onclick=hostStartGame;
-  document.getElementById('btn-skip').onclick=()=>{ if(isHost) hostEndRound(); };
+  document.getElementById('btn-skip').onclick=doSkip;
   document.getElementById('btn-guess').onclick=doGuess;
   const guessInput=document.getElementById('guess-input');
   guessInput.addEventListener('input',updateSuggestions);
