@@ -1,11 +1,9 @@
-// ⚠️  Diese Datei mit deinen Firebase-Projektdaten befüllen!
-// Firebase Console → Projekteinstellungen → "Deine Apps" → Webkonfiguration
 const FIREBASE_CONFIG = {
-  apiKey:            "DEIN_API_KEY",
-  authDomain:        "DEIN_PROJEKT.firebaseapp.com",
-  databaseURL:       "https://DEIN_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "DEIN_PROJEKT",
-  storageBucket:     "DEIN_PROJEKT.appspot.com",
-  messagingSenderId: "DEINE_SENDER_ID",
-  appId:             "DEINE_APP_ID"
+  apiKey:            "AIzaSyBk8h4zAczP73dxEAHp5OiJZLMkKm14eqw",
+  authDomain:        "weristdas.firebaseapp.com",
+  databaseURL:       "https://weristdas-default-rtdb.firebaseio.com",
+  projectId:         "weristdas",
+  storageBucket:     "weristdas.firebasestorage.app",
+  messagingSenderId: "876956545348",
+  appId:             "1:876956545348:web:8409842c48b6ece06a2711"
 };
