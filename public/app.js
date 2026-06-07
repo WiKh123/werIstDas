@@ -446,45 +446,67 @@ async function hostEndRound() {
 
 // ── Host: Start Game ────────────────────────────────────
 async function hostStartGame() {
-  const snap=await db.ref(`rooms/${roomCode}`).get();
-  const room=snap.val();
-  const pool=getPool(room);
-  const allIndices=shuffle(pool.map((_,i)=>i));
-  const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
-  const resets={};
-  Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+  const btn=document.getElementById('btn-start');
+  btn.disabled=true;
+  const origText=btn.textContent;
+  btn.textContent='Starte…';
+  try {
+    const snap=await db.ref(`rooms/${roomCode}`).get();
+    const room=snap.val();
+    if(!room){ throw new Error('Raum nicht gefunden. Bitte neu laden.'); }
+    const pool=getPool(room);
+    if(!pool.length){ throw new Error('Der Pool ist leer. Bitte Personen hinzufügen.'); }
+    const allIndices=shuffle(pool.map((_,i)=>i));
+    const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
+    const resets={};
+    Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  await db.ref(`rooms/${roomCode}`).update({
-    ...resets,
-    totalRounds:rounds.length, rounds,
-    state:'playing', currentRound:0,
-    timeLeft:30, roundResult:null, guesses:null,
-    currentImageUrl:'',
-  });
+    await db.ref(`rooms/${roomCode}`).update({
+      ...resets,
+      totalRounds:rounds.length, rounds,
+      state:'playing', currentRound:0,
+      timeLeft:30, roundResult:null, guesses:null,
+      currentImageUrl:'',
+    });
 
-  getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
-  rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
+    getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+    rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
+  } catch(e) {
+    console.error('Start fehlgeschlagen:', e);
+    alert('Spiel konnte nicht gestartet werden:\n' + (e && e.message ? e.message : e));
+    btn.disabled=false;
+    btn.textContent=origText;
+  }
 }
 
 // ── Host: Next Round ───────────────────────────────────
 async function hostNextRound() {
-  const snap=await db.ref(`rooms/${roomCode}`).get();
-  const room=snap.val();
-  if(room.roundResult?.isLastRound){await db.ref(`rooms/${roomCode}/state`).set('finished');return;}
-  const nextRound=room.currentRound+1;
-  const pool=getPool(room);
-  const nextPerson=pool[room.rounds[nextRound]];
-  const resets={};
-  Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+  const btn=document.getElementById('btn-next');
+  btn.disabled=true;
+  try {
+    const snap=await db.ref(`rooms/${roomCode}`).get();
+    const room=snap.val();
+    if(room.roundResult?.isLastRound){await db.ref(`rooms/${roomCode}/state`).set('finished');return;}
+    const nextRound=room.currentRound+1;
+    const pool=getPool(room);
+    const nextPerson=pool[room.rounds[nextRound]];
+    const resets={};
+    Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  await db.ref(`rooms/${roomCode}`).update({
-    ...resets,
-    state:'playing', currentRound:nextRound,
-    timeLeft:30, roundResult:null, guesses:null,
-    currentImageUrl:'',
-  });
+    await db.ref(`rooms/${roomCode}`).update({
+      ...resets,
+      state:'playing', currentRound:nextRound,
+      timeLeft:30, roundResult:null, guesses:null,
+      currentImageUrl:'',
+    });
 
-  getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+    getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+  } catch(e) {
+    console.error('Nächste Runde fehlgeschlagen:', e);
+    alert('Nächste Runde konnte nicht gestartet werden:\n' + (e && e.message ? e.message : e));
+  } finally {
+    btn.disabled=false;
+  }
 }
 
 // ── Error helpers ──────────────────────────────────────
