@@ -13,6 +13,9 @@ let hostTimerInterval = null;
 let roundEndedFlag = false;
 let roomRef = null;
 let currentPoolSize = PERSONS.length;
+let currentRoomSnapshot = null;
+let roundOptions = [];
+let feedbackTimer = null;
 const processedGuessUids = new Set();
 const imageUrlCache = {};
 
@@ -229,6 +232,7 @@ function subscribeRoom() {
 
 // ── Room State Machine ───────────────────────────────────
 function handleRoom(room) {
+  currentRoomSnapshot = room;
   const {state,players,host,currentRound,timeLeft,roundResult}=room;
 
   if(state==='lobby') {
@@ -237,7 +241,12 @@ function handleRoom(room) {
     currentPoolSize=pool.length;
     const countEl=document.getElementById('pool-count-label');
     if(countEl) countEl.textContent=pool.length+' Personen';
-    if(document.getElementById('screen-pool').classList.contains('active')) {
+    const rdisplay=document.getElementById('rounds-display');
+    if(rdisplay && roundsCount>currentPoolSize){
+      roundsCount=Math.max(3,currentPoolSize);
+      rdisplay.textContent=roundsCount;
+    }
+    if(document.getElementById('screen-pool').classList.contains('active')){
       renderPoolScreen(room);
     }
     if(lastRoomState!=='lobby') preloadAllImages(pool);
@@ -295,36 +304,65 @@ function setImage(imgEl, src) {
 
 function startRoundUI(room) {
   hasGuessedThisRound=false;
+  clearTimeout(feedbackTimer);
   const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
   const person=pool[currentPersonIndex];
 
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
-  document.getElementById('guess-input').value='';
-  document.getElementById('guess-input').disabled=false;
-  document.getElementById('btn-guess').disabled=false;
-  document.getElementById('guess-feedback').className='hidden';
+  document.getElementById('guess-toast').className='guess-toast hidden';
   document.getElementById('correct-overlay').classList.add('hidden');
   document.getElementById('live-scores').innerHTML='';
   document.getElementById('my-score').textContent=`${room.players[uid]?.score||0} Pkt.`;
   updateTimer(30);
 
-  const imgEl=document.getElementById('person-image');
-  imgEl.src='';
-  imgEl.style.display='';
-  imgEl.alt='Lädt...';
+  // Build shuffled name chips from the full pool
+  roundOptions=shuffle([...pool]);
+  document.getElementById('name-options').innerHTML=roundOptions.map((p,i)=>
+    `<button class="name-chip" onclick="guessOption(${i})">${esc(p.name)}</button>`
+  ).join('');
 
+  // Load image
+  const imgEl=document.getElementById('person-image');
+  imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
   if(imageUrlCache[person.wikiTitle]) {
     setImage(imgEl, imageUrlCache[person.wikiTitle]);
   } else {
-    getImageUrl(person).then(src => {
-      imgEl.alt='Wer ist das?';
-      setImage(imgEl, src);
-    });
+    getImageUrl(person).then(src=>{ imgEl.alt='Wer ist das?'; setImage(imgEl,src); });
   }
 
   if(isHost) startHostTimer();
   showScreen('game');
+}
+
+// ── Player: Guess from chip ────────────────────────────────
+async function guessOption(idx) {
+  if(hasGuessedThisRound||currentPersonIndex===null||!currentRoomSnapshot) return;
+  const chips=document.querySelectorAll('.name-chip');
+  const chip=chips[idx];
+  if(!chip||chip.disabled) return;
+  chip.disabled=true;
+
+  const guessedPerson=roundOptions[idx];
+  const correctPerson=getPool(currentRoomSnapshot)[currentPersonIndex];
+  const correct=isCorrect(guessedPerson.name, correctPerson);
+  chip.classList.add(correct?'chip-correct':'chip-wrong');
+
+  const toast=document.getElementById('guess-toast');
+  clearTimeout(feedbackTimer);
+
+  if(correct) {
+    chips.forEach(b=>b.disabled=true);
+    hasGuessedThisRound=true;
+    document.getElementById('correct-overlay').classList.remove('hidden');
+    toast.textContent='✓ Richtig!';
+    toast.className='guess-toast correct';
+    await db.ref(`rooms/${roomCode}/guesses/${uid}`).set(guessedPerson.name);
+  } else {
+    toast.textContent='✗ Falsch!';
+    toast.className='guess-toast wrong';
+    feedbackTimer=setTimeout(()=>{ toast.className='guess-toast hidden'; },1500);
+  }
 }
 
 // ── Host Timer ───────────────────────────────────────────
@@ -407,31 +445,6 @@ async function hostNextRound() {
   });
 }
 
-// ── Player: Submit Guess ───────────────────────────────
-async function doGuess() {
-  if(hasGuessedThisRound||currentPersonIndex===null) return;
-  const guess=document.getElementById('guess-input').value.trim();
-  if(guess.length<2) return;
-  const snap=await db.ref(`rooms/${roomCode}/personPool`).get();
-  const raw=snap.val();
-  const pool=raw ? (Array.isArray(raw)?raw:Object.values(raw)) : PERSONS;
-  const person=pool[currentPersonIndex];
-  const fb=document.getElementById('guess-feedback');
-  if(isCorrect(guess,person)) {
-    hasGuessedThisRound=true;
-    document.getElementById('guess-input').disabled=true;
-    document.getElementById('btn-guess').disabled=true;
-    document.getElementById('correct-overlay').classList.remove('hidden');
-    fb.textContent='✓ Richtig! Punkte werden vergeben…';
-    fb.className='correct';
-    await db.ref(`rooms/${roomCode}/guesses/${uid}`).set(guess);
-  } else {
-    fb.textContent='✗ Falsch! Versuch es nochmal.';
-    fb.className='wrong';
-    document.getElementById('guess-input').select();
-  }
-}
-
 // ── Error helpers ──────────────────────────────────────
 function showJoinError(msg){const el=document.getElementById('join-error');el.textContent=msg;el.classList.remove('hidden');}
 function clearJoinError(){document.getElementById('join-error').classList.add('hidden');}
@@ -462,9 +475,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   });
 
   document.getElementById('btn-manage-pool').onclick=()=>{
-    const snap_room=db.ref(`rooms/${roomCode}`).get().then(snap=>{
-      if(snap.exists()) renderPoolScreen(snap.val());
-    });
+    db.ref(`rooms/${roomCode}`).get().then(snap=>{ if(snap.exists()) renderPoolScreen(snap.val()); });
     showScreen('pool');
   };
   document.getElementById('btn-pool-back').onclick=()=>showScreen('lobby');
@@ -472,13 +483,12 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('pool-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addPersonToPool();});
 
   document.getElementById('btn-start').onclick=hostStartGame;
-  document.getElementById('btn-guess').onclick=doGuess;
-  document.getElementById('guess-input').addEventListener('keydown',e=>{if(e.key==='Enter')doGuess();});
   document.getElementById('btn-next').onclick=hostNextRound;
   document.getElementById('btn-play-again').onclick=()=>{
     if(roomRef){roomRef.off();roomRef=null;}
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
-    roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;currentPoolSize=PERSONS.length;
+    roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;
+    currentPoolSize=PERSONS.length;currentRoomSnapshot=null;
     clearJoinError(); showScreen('join');
   };
 

@@ -83,8 +83,9 @@ input::placeholder { color:var(--muted); }
 .pool-remove-btn { background:none; border:none; color:var(--muted); font-size:1.3rem; line-height:1; cursor:pointer; padding:.2rem .4rem; border-radius:6px; transition:color .15s,background .15s; flex-shrink:0; }
 .pool-remove-btn:hover { color:var(--danger); background:rgba(255,92,92,.1); }
 
+/* Game screen */
 #screen-game { padding:0; max-width:600px; align-items:stretch; }
-.game-header { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; }
+.game-header { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; position:sticky; top:0; z-index:10; }
 .round-label { font-weight:600; font-size:.95rem; color:var(--muted); }
 .my-score { font-weight:700; color:var(--accent); }
 
@@ -94,21 +95,28 @@ input::placeholder { color:var(--muted); }
 .timer-fg { fill:none; stroke:var(--accent); stroke-width:3.5; stroke-linecap:round; transition:stroke-dasharray .8s linear,stroke .3s; }
 .timer-ring>span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.95rem; }
 
-.image-container { width:100%; background:#000; position:relative; display:flex; align-items:center; justify-content:center; min-height:280px; max-height:420px; overflow:hidden; }
-#person-image { max-width:100%; max-height:420px; object-fit:contain; display:block; }
+.image-container { width:100%; background:#000; position:relative; display:flex; align-items:center; justify-content:center; min-height:220px; max-height:360px; overflow:hidden; }
+#person-image { max-width:100%; max-height:360px; object-fit:contain; display:block; }
 .correct-overlay { position:absolute; inset:0; background:rgba(76,223,128,.85); display:flex; align-items:center; justify-content:center; animation:fadeIn .25s ease; }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 .correct-badge { font-size:2.5rem; font-weight:900; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); }
 
-.guess-area { background:var(--card); padding:.85rem 1rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
-.guess-input-row { display:flex; gap:.6rem; }
-.guess-input-row input { flex:1; margin:0; border-radius:8px; }
-.guess-input-row .btn { width:auto; padding:.85rem 1.25rem; border-radius:8px; }
-#guess-feedback { margin-top:.5rem; padding:.5rem .75rem; border-radius:8px; font-weight:600; font-size:.9rem; text-align:center; }
-#guess-feedback.correct { background:rgba(76,223,128,.15); color:var(--success); border:1px solid rgba(76,223,128,.3); }
-#guess-feedback.wrong { background:rgba(255,92,92,.12); color:var(--danger); border:1px solid rgba(255,92,92,.25); }
+/* Name option chips */
+.name-options { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; padding:.75rem 1rem 1.5rem; background:var(--bg); }
+.name-chip { padding:.75rem .5rem; background:var(--card); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-size:.88rem; font-weight:500; cursor:pointer; transition:background .15s,border-color .15s,transform .1s; text-align:center; word-break:break-word; line-height:1.3; }
+.name-chip:hover:not(:disabled) { background:var(--card2); border-color:var(--accent); }
+.name-chip:active:not(:disabled) { transform:scale(.95); }
+.name-chip:disabled { opacity:.5; cursor:default; }
+.name-chip.chip-correct { background:rgba(76,223,128,.2)!important; border-color:var(--success)!important; color:var(--success)!important; font-weight:700; opacity:1!important; }
+.name-chip.chip-wrong { background:rgba(255,92,92,.15)!important; border-color:var(--danger)!important; color:var(--danger)!important; opacity:.7!important; }
 
-.live-scores { flex:1; overflow-y:auto; padding:.75rem 1rem; background:var(--bg); }
+/* Feedback toast */
+.guess-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); padding:.6rem 1.5rem; border-radius:20px; font-weight:700; font-size:1rem; z-index:200; box-shadow:0 4px 20px rgba(0,0,0,.5); white-space:nowrap; animation:toastIn .2s ease; }
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.guess-toast.correct { background:var(--success); color:#000; }
+.guess-toast.wrong { background:var(--danger); color:#fff; }
+
+.live-scores { padding:.75rem 1rem; background:var(--bg); }
 
 .score-item { display:flex; align-items:center; gap:.75rem; padding:.6rem .85rem; background:var(--card); border:1px solid var(--border); border-radius:10px; margin-bottom:.4rem; }
 .score-rank { font-size:1.2rem; width:2rem; text-align:center; flex-shrink:0; }
@@ -130,4 +138,5 @@ input::placeholder { color:var(--muted); }
   .card { padding:1.5rem 1.1rem; }
   h1 { font-size:1.8rem; }
   .room-code-box strong { font-size:2rem; letter-spacing:.2em; }
+  .name-chip { font-size:.82rem; padding:.65rem .4rem; }
 }
