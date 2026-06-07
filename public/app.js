@@ -353,6 +353,7 @@ function handleRoom(room) {
     }
     if(lastRoomState!=='lobby') preloadAllImages(pool);
     if(host===uid&&!isHost){isHost=true;document.getElementById('host-controls').classList.remove('hidden');document.getElementById('waiting-msg').classList.add('hidden');}
+    if(isHost){const sb=document.getElementById('btn-start');if(sb&&sb.disabled){sb.disabled=false;sb.textContent='Spiel starten 🚀';}}
     lastRoomState='lobby'; return;
   }
 
@@ -658,7 +659,11 @@ window.addEventListener('DOMContentLoaded', async()=>{
     if(roomRef){roomRef.off();roomRef=null;}
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
     roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;
+    roundEndedFlag=false;hasGuessedThisRound=false;hasSkippedThisRound=false;
+    processedGuessUids.clear();
     currentPoolSize=PERSONS.length;currentRoomSnapshot=null;
+    const startBtn=document.getElementById('btn-start');
+    startBtn.disabled=false; startBtn.textContent='Spiel starten 🚀';
     clearJoinError(); showScreen('join');
   };
 
