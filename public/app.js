@@ -35,15 +35,17 @@ async function getImageUrl(person) {
   if (!key) return null;
   if (imageUrlCache[key]) return imageUrlCache[key];
   try {
-    const url = 'https://en.wikipedia.org/w/api.php?action=query' +
-      '&titles=' + encodeURIComponent(key) +
-      '&prop=pageimages&piprop=thumbnail&pithumbsize=500&redirects=1&format=json&origin=*';
+    // REST summary API: uses lead section image → much more reliable than pageimages
+    const url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(key);
     const res = await fetch(url);
+    if (!res.ok) return null;
     const data = await res.json();
-    const pages = data && data.query && data.query.pages;
-    const page = pages && Object.values(pages)[0];
-    const src = page && page.thumbnail && page.thumbnail.source;
-    if (src) imageUrlCache[key] = src;
+    let src = data && data.thumbnail && data.thumbnail.source;
+    if (src) {
+      // Upscale to 500px (Wikipedia thumbnail URLs support size substitution)
+      src = src.replace(/\/\d+px-/, '/500px-');
+      imageUrlCache[key] = src;
+    }
     return src || null;
   } catch(e) { return null; }
 }
