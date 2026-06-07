@@ -191,7 +191,7 @@ async function createRoom(name) {
     host:uid, state:'lobby',
     personPool:defaultPool,
     rounds:null, totalRounds:null, currentRound:-1,
-    timeLeft:30, roundResult:null,
+    timeLeft:30, roundResult:null, currentImageUrl:'',
     players:{[uid]:{name,score:0,hasGuessed:false}},
     guesses:null,
   });
@@ -264,6 +264,9 @@ function handleRoom(room) {
     renderScores(players,'live-scores',true);
     const me=players[uid];
     if(me) document.getElementById('my-score').textContent=`${me.score} Pkt.`;
+    // Update image if host just wrote the URL
+    const imgEl=document.getElementById('person-image');
+    if(room.currentImageUrl && !imgEl.src.includes('wikimedia')) setImage(imgEl, room.currentImageUrl);
     if(isHost&&room.guesses) hostProcessGuesses(room);
     return;
   }
@@ -322,13 +325,14 @@ function startRoundUI(room) {
     `<button class="name-chip" onclick="guessOption(${i})">${esc(p.name)}</button>`
   ).join('');
 
-  // Load image
+  // Load image: host stores URL in Firebase, clients read from there
   const imgEl=document.getElementById('person-image');
   imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
-  if(imageUrlCache[person.wikiTitle]) {
-    setImage(imgEl, imageUrlCache[person.wikiTitle]);
+  if(room.currentImageUrl) {
+    setImage(imgEl, room.currentImageUrl);
   } else {
-    getImageUrl(person).then(src=>{ imgEl.alt='Wer ist das?'; setImage(imgEl,src); });
+    // Fallback for own browser (mainly host before Firebase update arrives)
+    getImageUrl(person).then(src=>{ if(src) setImage(imgEl, src); });
   }
 
   if(isHost) startHostTimer();
@@ -403,10 +407,10 @@ async function hostEndRound() {
   roundEndedFlag=true;
   const snap=await db.ref(`rooms/${roomCode}`).get();
   const roomData=snap.val();
-  const {rounds,currentRound,totalRounds}=roomData;
+  const {rounds,currentRound,totalRounds,currentImageUrl}=roomData;
   const pool=getPool(roomData);
   const person=pool[rounds[currentRound]];
-  const imageUrl=imageUrlCache[person.wikiTitle]||'';
+  const imageUrl=currentImageUrl||imageUrlCache[person.wikiTitle]||'';
   await db.ref(`rooms/${roomCode}`).update({
     state:'round_end',
     roundResult:{name:person.name,info:person.info||'',imageUrl,isLastRound:currentRound>=totalRounds-1},
@@ -422,12 +426,21 @@ async function hostStartGame() {
   const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+
+  // Host fetches first round's image URL and distributes via Firebase
+  const firstPerson=pool[rounds[0]];
+  const currentImageUrl=await getImageUrl(firstPerson)||'';
+
   await db.ref(`rooms/${roomCode}`).update({
     ...resets,
-    totalRounds:rounds.length,rounds,
-    state:'playing',currentRound:0,
-    timeLeft:30,roundResult:null,guesses:null,
+    totalRounds:rounds.length, rounds,
+    state:'playing', currentRound:0,
+    timeLeft:30, roundResult:null, guesses:null,
+    currentImageUrl,
   });
+
+  // Pre-fetch remaining images in background
+  rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
 }
 
 // ── Host: Next Round ───────────────────────────────────
@@ -436,12 +449,19 @@ async function hostNextRound() {
   const room=snap.val();
   if(room.roundResult?.isLastRound){await db.ref(`rooms/${roomCode}/state`).set('finished');return;}
   const nextRound=room.currentRound+1;
+  const pool=getPool(room);
+  const nextPerson=pool[room.rounds[nextRound]];
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+
+  // Host fetches next round's image URL and distributes via Firebase
+  const currentImageUrl=await getImageUrl(nextPerson)||'';
+
   await db.ref(`rooms/${roomCode}`).update({
     ...resets,
-    state:'playing',currentRound:nextRound,
-    timeLeft:30,roundResult:null,guesses:null,
+    state:'playing', currentRound:nextRound,
+    timeLeft:30, roundResult:null, guesses:null,
+    currentImageUrl,
   });
 }
 
