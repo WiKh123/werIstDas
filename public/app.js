@@ -420,6 +420,8 @@ function startRoundUI(room) {
   const imgEl=document.getElementById('person-image');
   imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
   if(room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
+  const skipDiv=document.getElementById('host-skip');
+  if(skipDiv) skipDiv.classList.toggle('hidden',!isHost);
   if(isHost) startHostTimer();
   showScreen('game');
 }
@@ -596,6 +598,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('pool-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addPersonToPool();});
 
   document.getElementById('btn-start').onclick=hostStartGame;
+  document.getElementById('btn-skip').onclick=()=>{ if(isHost) hostEndRound(); };
   document.getElementById('btn-guess').onclick=doGuess;
   const guessInput=document.getElementById('guess-input');
   guessInput.addEventListener('input',updateSuggestions);
