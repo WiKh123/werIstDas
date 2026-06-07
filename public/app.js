@@ -204,7 +204,6 @@ function updateSuggestions() {
   const pool=getPool(currentRoomSnapshot);
   const seen=new Set();
   const matches=[];
-  // Prefer matches that start with the query, then substring matches
   for(const p of pool){
     const cands=[p.name,...(p.aliases||[])].map(norm);
     if(cands.some(c=>c.startsWith(q)) && !seen.has(p.name)){ seen.add(p.name); matches.push(p); }
@@ -366,14 +365,9 @@ function startRoundUI(room) {
   hideSuggestions();
   updateTimer(30);
 
-  // Load image: host stores URL in Firebase, clients read from there
   const imgEl=document.getElementById('person-image');
   imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
-  if(room.currentImageUrl) {
-    setImage(imgEl, room.currentImageUrl);
-  } else {
-    getImageUrl(person).then(src=>{ if(src) setImage(imgEl, src); });
-  }
+  if(room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
 
   if(isHost) startHostTimer();
   showScreen('game');
@@ -460,17 +454,15 @@ async function hostStartGame() {
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  const firstPerson=pool[rounds[0]];
-  const currentImageUrl=await getImageUrl(firstPerson)||'';
-
   await db.ref(`rooms/${roomCode}`).update({
     ...resets,
     totalRounds:rounds.length, rounds,
     state:'playing', currentRound:0,
     timeLeft:30, roundResult:null, guesses:null,
-    currentImageUrl,
+    currentImageUrl:'',
   });
 
+  getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
   rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
 }
 
@@ -485,14 +477,14 @@ async function hostNextRound() {
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  const currentImageUrl=await getImageUrl(nextPerson)||'';
-
   await db.ref(`rooms/${roomCode}`).update({
     ...resets,
     state:'playing', currentRound:nextRound,
     timeLeft:30, roundResult:null, guesses:null,
-    currentImageUrl,
+    currentImageUrl:'',
   });
+
+  getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
 }
 
 // ── Error helpers ──────────────────────────────────────
