@@ -12,12 +12,14 @@ let lastCurrentRound = -99;
 let hostTimerInterval = null;
 let roundEndedFlag = false;
 let roomRef = null;
+let currentPoolSize = PERSONS.length;
 const processedGuessUids = new Set();
-const imageUrlCache = {}; // wikiTitle → image URL
+const imageUrlCache = {};
 
 // ── Wikipedia Image Loader ─────────────────────────────────
 async function getImageUrl(person) {
   const key = person.wikiTitle;
+  if (!key) return null;
   if (imageUrlCache[key]) return imageUrlCache[key];
   try {
     const url = 'https://en.wikipedia.org/w/api.php?action=query' +
@@ -33,8 +35,79 @@ async function getImageUrl(person) {
   } catch(e) { return null; }
 }
 
-function preloadAllImages() {
-  PERSONS.forEach(p => getImageUrl(p));
+function preloadAllImages(pool) {
+  (pool || PERSONS).forEach(p => getImageUrl(p));
+}
+
+// ── Pool helpers ───────────────────────────────────────────
+function getPool(room) {
+  const p = room && room.personPool;
+  if (!p) return PERSONS;
+  return Array.isArray(p) ? p : Object.values(p);
+}
+
+function renderPoolScreen(room) {
+  const pool = getPool(room);
+  document.getElementById('pool-screen-count').textContent = pool.length + ' Personen';
+  document.getElementById('pool-person-list').innerHTML = pool.length
+    ? pool.map((p, i) =>
+        `<div class="pool-item">
+          <span class="pool-item-name">${esc(p.name)}</span>
+          <button class="pool-remove-btn" onclick="removePersonFromPool(${i})">×</button>
+        </div>`
+      ).join('')
+    : '<p class="muted" style="margin:.75rem 0">Keine Personen im Pool.</p>';
+}
+
+async function removePersonFromPool(index) {
+  const snap = await db.ref(`rooms/${roomCode}/personPool`).get();
+  const raw = snap.val() || [];
+  const pool = Array.isArray(raw) ? [...raw] : Object.values(raw);
+  pool.splice(index, 1);
+  await db.ref(`rooms/${roomCode}/personPool`).set(pool);
+}
+
+async function addPersonToPool() {
+  const input = document.getElementById('pool-name-input');
+  const name = input.value.trim();
+  if (!name) return;
+
+  const btn = document.getElementById('btn-add-person');
+  const fb = document.getElementById('pool-feedback');
+  btn.disabled = true;
+  fb.textContent = 'Suche auf Wikipedia…';
+  fb.className = 'pool-feedback muted';
+  fb.classList.remove('hidden');
+
+  try {
+    const searchUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=search' +
+      '&srsearch=' + encodeURIComponent(name) +
+      '&srlimit=1&srprop=&format=json&origin=*';
+    const res = await fetch(searchUrl);
+    const data = await res.json();
+    const results = data && data.query && data.query.search;
+    const wikiTitle = (results && results.length > 0)
+      ? results[0].title.replace(/\s+/g, '_')
+      : name.replace(/\s+/g, '_');
+
+    const lastName = name.split(' ').at(-1);
+    const newPerson = { name, aliases: [lastName], wikiTitle, info: '' };
+
+    const snap = await db.ref(`rooms/${roomCode}/personPool`).get();
+    const raw = snap.val() || [];
+    const pool = Array.isArray(raw) ? [...raw] : Object.values(raw);
+    pool.push(newPerson);
+    await db.ref(`rooms/${roomCode}/personPool`).set(pool);
+
+    input.value = '';
+    fb.textContent = '✓ ' + name + ' hinzugefügt';
+    fb.className = 'pool-feedback correct';
+    getImageUrl(newPerson);
+  } catch(e) {
+    fb.textContent = 'Fehler. Bitte versuche es erneut.';
+    fb.className = 'pool-feedback wrong';
+  }
+  btn.disabled = false;
 }
 
 // ── Firebase Init ─────────────────────────────────────────
@@ -110,10 +183,11 @@ function updateTimer(t) {
 // ── Room Operations ───────────────────────────────────────
 async function createRoom(name) {
   const code=genCode();
-  const allIdx=shuffle(PERSONS.map((_,i)=>i));
+  const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||''}));
   await db.ref(`rooms/${code}`).set({
     host:uid, state:'lobby',
-    rounds:allIdx, totalRounds:null, currentRound:-1,
+    personPool:defaultPool,
+    rounds:null, totalRounds:null, currentRound:-1,
     timeLeft:30, roundResult:null,
     players:{[uid]:{name,score:0,hasGuessed:false}},
     guesses:null,
@@ -121,7 +195,6 @@ async function createRoom(name) {
   db.ref(`rooms/${code}/players/${uid}/online`).onDisconnect().set(false);
   myName=name; roomCode=code; isHost=true; lastRoomState=null; lastCurrentRound=-99;
   subscribeRoom();
-  preloadAllImages();
   document.getElementById('lobby-code').textContent=code;
   document.getElementById('host-controls').classList.remove('hidden');
   document.getElementById('waiting-msg').classList.add('hidden');
@@ -141,7 +214,6 @@ async function joinRoom(name, code) {
   db.ref(`rooms/${code}/players/${uid}/online`).onDisconnect().set(false);
   myName=name; roomCode=code; isHost=false; lastRoomState=null; lastCurrentRound=-99;
   subscribeRoom();
-  preloadAllImages();
   document.getElementById('lobby-code').textContent=code;
   document.getElementById('host-controls').classList.add('hidden');
   document.getElementById('waiting-msg').classList.remove('hidden');
@@ -161,6 +233,14 @@ function handleRoom(room) {
 
   if(state==='lobby') {
     renderLobbyPlayers(players,host);
+    const pool=getPool(room);
+    currentPoolSize=pool.length;
+    const countEl=document.getElementById('pool-count-label');
+    if(countEl) countEl.textContent=pool.length+' Personen';
+    if(document.getElementById('screen-pool').classList.contains('active')) {
+      renderPoolScreen(room);
+    }
+    if(lastRoomState!=='lobby') preloadAllImages(pool);
     if(host===uid&&!isHost){isHost=true;document.getElementById('host-controls').classList.remove('hidden');document.getElementById('waiting-msg').classList.add('hidden');}
     lastRoomState='lobby'; return;
   }
@@ -215,8 +295,9 @@ function setImage(imgEl, src) {
 
 function startRoundUI(room) {
   hasGuessedThisRound=false;
+  const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
-  const person=PERSONS[currentPersonIndex];
+  const person=pool[currentPersonIndex];
 
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
   document.getElementById('guess-input').value='';
@@ -260,7 +341,8 @@ function startHostTimer() {
 // ── Host: Validate Guesses ───────────────────────────────
 async function hostProcessGuesses(room) {
   const {guesses,players,rounds,currentRound,timeLeft}=room;
-  const person=PERSONS[rounds[currentRound]];
+  const pool=getPool(room);
+  const person=pool[rounds[currentRound]];
   for(const [gUid,guess] of Object.entries(guesses)) {
     if(processedGuessUids.has(gUid)) continue;
     processedGuessUids.add(gUid);
@@ -282,8 +364,10 @@ async function hostEndRound() {
   if(roundEndedFlag) return;
   roundEndedFlag=true;
   const snap=await db.ref(`rooms/${roomCode}`).get();
-  const {rounds,currentRound,totalRounds}=snap.val();
-  const person=PERSONS[rounds[currentRound]];
+  const roomData=snap.val();
+  const {rounds,currentRound,totalRounds}=roomData;
+  const pool=getPool(roomData);
+  const person=pool[rounds[currentRound]];
   const imageUrl=imageUrlCache[person.wikiTitle]||'';
   await db.ref(`rooms/${roomCode}`).update({
     state:'round_end',
@@ -295,7 +379,9 @@ async function hostEndRound() {
 async function hostStartGame() {
   const snap=await db.ref(`rooms/${roomCode}`).get();
   const room=snap.val();
-  const rounds=room.rounds.slice(0,Math.min(roundsCount,PERSONS.length));
+  const pool=getPool(room);
+  const allIndices=shuffle(pool.map((_,i)=>i));
+  const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
   await db.ref(`rooms/${roomCode}`).update({
@@ -326,7 +412,10 @@ async function doGuess() {
   if(hasGuessedThisRound||currentPersonIndex===null) return;
   const guess=document.getElementById('guess-input').value.trim();
   if(guess.length<2) return;
-  const person=PERSONS[currentPersonIndex];
+  const snap=await db.ref(`rooms/${roomCode}/personPool`).get();
+  const raw=snap.val();
+  const pool=raw ? (Array.isArray(raw)?raw:Object.values(raw)) : PERSONS;
+  const person=pool[currentPersonIndex];
   const fb=document.getElementById('guess-feedback');
   if(isCorrect(guess,person)) {
     hasGuessedThisRound=true;
@@ -351,7 +440,7 @@ function clearJoinError(){document.getElementById('join-error').classList.add('h
 window.addEventListener('DOMContentLoaded', async()=>{
   const rdisplay=document.getElementById('rounds-display');
   document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;}};
-  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(20,PERSONS.length)){roundsCount++;rdisplay.textContent=roundsCount;}};
+  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(20,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;}};
 
   document.getElementById('btn-create').onclick=async()=>{
     const name=document.getElementById('player-name').value.trim();
@@ -372,6 +461,16 @@ window.addEventListener('DOMContentLoaded', async()=>{
     if(e.key==='Enter'){const code=document.getElementById('room-code').value.trim();if(code)doJoin();else document.getElementById('btn-create').click();}
   });
 
+  document.getElementById('btn-manage-pool').onclick=()=>{
+    const snap_room=db.ref(`rooms/${roomCode}`).get().then(snap=>{
+      if(snap.exists()) renderPoolScreen(snap.val());
+    });
+    showScreen('pool');
+  };
+  document.getElementById('btn-pool-back').onclick=()=>showScreen('lobby');
+  document.getElementById('btn-add-person').onclick=addPersonToPool;
+  document.getElementById('pool-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addPersonToPool();});
+
   document.getElementById('btn-start').onclick=hostStartGame;
   document.getElementById('btn-guess').onclick=doGuess;
   document.getElementById('guess-input').addEventListener('keydown',e=>{if(e.key==='Enter')doGuess();});
@@ -379,7 +478,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('btn-play-again').onclick=()=>{
     if(roomRef){roomRef.off();roomRef=null;}
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
-    roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;
+    roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;currentPoolSize=PERSONS.length;
     clearJoinError(); showScreen('join');
   };
 

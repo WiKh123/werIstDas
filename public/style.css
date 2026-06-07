@@ -57,12 +57,31 @@ input::placeholder { color:var(--muted); }
 .player-name-text { flex:1; font-weight:500; }
 .host-badge { font-size:.72rem; background:var(--accent); color:#fff; padding:.15rem .5rem; border-radius:20px; font-weight:600; }
 
+.pool-lobby-btn { width:100%; margin-bottom:.75rem; text-align:center; }
+
 .rounds-selector { display:flex; align-items:center; justify-content:space-between; background:var(--card2); border-radius:10px; padding:.75rem 1rem; margin-bottom:.75rem; }
 .rounds-selector label { color:var(--muted); font-size:.95rem; }
 .rounds-row { display:flex; align-items:center; gap:1rem; }
 #rounds-display { font-size:1.3rem; font-weight:700; min-width:1.5rem; text-align:center; }
 .rounds-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--border); color:var(--text); font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
 .rounds-btn:hover { background:var(--accent); }
+
+/* Pool screen */
+.pool-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; }
+.pool-header h2 { flex:1; margin-bottom:0; text-align:left; font-size:1.3rem; }
+.pool-back-btn { background:none; border:1.5px solid var(--border); color:var(--text); padding:.45rem .85rem; border-radius:8px; cursor:pointer; font-size:.9rem; white-space:nowrap; flex-shrink:0; }
+.pool-back-btn:hover { background:var(--card2); }
+.pool-screen-count { color:var(--muted); font-size:.85rem; white-space:nowrap; flex-shrink:0; }
+.add-person-row { display:flex; gap:.6rem; margin-bottom:.5rem; }
+.add-person-row input { flex:1; margin-bottom:0; }
+.pool-feedback { font-size:.9rem; text-align:center; padding:.4rem .75rem; border-radius:8px; margin-bottom:.75rem; }
+.pool-feedback.correct { color:var(--success); }
+.pool-feedback.wrong { color:var(--danger); }
+.pool-feedback.muted { color:var(--muted); }
+.pool-item { display:flex; align-items:center; gap:.75rem; padding:.55rem .85rem; background:var(--card2); border-radius:10px; margin-bottom:.35rem; }
+.pool-item-name { flex:1; font-size:.95rem; }
+.pool-remove-btn { background:none; border:none; color:var(--muted); font-size:1.3rem; line-height:1; cursor:pointer; padding:.2rem .4rem; border-radius:6px; transition:color .15s,background .15s; flex-shrink:0; }
+.pool-remove-btn:hover { color:var(--danger); background:rgba(255,92,92,.1); }
 
 #screen-game { padding:0; max-width:600px; align-items:stretch; }
 .game-header { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; }
