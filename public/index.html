@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Wer ist das?</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== JOIN SCREEN ===== -->
+  <div id="screen-join" class="screen active">
+    <div class="card">
+      <h1>🎭 Wer ist das?</h1>
+      <p class="subtitle">Multiplayer Ratespiel</p>
+
+      <input type="text" id="player-name" placeholder="Dein Name" maxlength="20" autocomplete="off">
+
+      <button id="btn-create" class="btn primary">Neues Spiel erstellen</button>
+
+      <div class="divider"><span>oder beitreten</span></div>
+
+      <div class="join-row">
+        <input type="text" id="room-code" placeholder="Raumcode" maxlength="4" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.15em">
+        <button id="btn-join" class="btn secondary">Beitreten</button>
+      </div>
+
+      <p id="join-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <!-- ===== LOBBY SCREEN ===== -->
+  <div id="screen-lobby" class="screen">
+    <div class="card">
+      <h2>Warteraum</h2>
+      <div class="room-code-box">
+        <span class="room-code-label">Raumcode</span>
+        <strong id="lobby-code">----</strong>
+        <span class="room-code-hint">Teile diesen Code mit deinen Freunden</span>
+      </div>
+
+      <div id="player-list" class="player-list"></div>
+
+      <div id="host-controls" class="hidden">
+        <div class="rounds-selector">
+          <label for="rounds-count">Anzahl Runden</label>
+          <div class="rounds-row">
+            <button class="rounds-btn" id="rounds-minus">−</button>
+            <span id="rounds-display">10</span>
+            <button class="rounds-btn" id="rounds-plus">+</button>
+          </div>
+        </div>
+        <button id="btn-start" class="btn primary">Spiel starten 🚀</button>
+      </div>
+
+      <p id="waiting-msg" class="muted">Warte auf den Host…</p>
+    </div>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <span id="round-label" class="round-label">Runde 1/10</span>
+      <div class="timer-ring">
+        <svg viewBox="0 0 36 36">
+          <path class="timer-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path id="timer-arc" class="timer-fg" stroke-dasharray="100,100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+        </svg>
+        <span id="timer-text">30</span>
+      </div>
+      <span id="my-score" class="my-score">0 Pkt.</span>
+    </div>
+
+    <div class="image-container">
+      <img id="person-image" src="" alt="Wer ist das?">
+      <div id="correct-overlay" class="correct-overlay hidden">
+        <div class="correct-badge">✓ Richtig!</div>
+      </div>
+    </div>
+
+    <div class="guess-area">
+      <div class="guess-input-row">
+        <input type="text" id="guess-input" placeholder="Wer ist diese Person?" autocomplete="off">
+        <button id="btn-guess" class="btn primary">Raten</button>
+      </div>
+      <div id="guess-feedback" class="hidden"></div>
+    </div>
+
+    <div id="live-scores" class="live-scores"></div>
+  </div>
+
+  <!-- ===== ROUND END SCREEN ===== -->
+  <div id="screen-round-end" class="screen">
+    <div class="card">
+      <h2>Auflösung</h2>
+      <div class="answer-reveal">
+        <img id="reveal-image" src="" alt="">
+        <div class="reveal-info">
+          <h3 id="reveal-name"></h3>
+          <p id="reveal-info-text" class="muted"></p>
+        </div>
+      </div>
+
+      <div id="round-scores"></div>
+
+      <div id="host-next" class="hidden">
+        <button id="btn-next" class="btn primary">Nächste Runde ▶</button>
+      </div>
+      <p id="waiting-next" class="muted hidden">Warte auf den Host…</p>
+    </div>
+  </div>
+
+  <!-- ===== END SCREEN ===== -->
+  <div id="screen-end" class="screen">
+    <div class="card">
+      <h1>🏆 Endergebnis</h1>
+      <div id="final-scores"></div>
+      <button id="btn-play-again" class="btn primary" style="margin-top:1.5rem">Nochmal spielen</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
