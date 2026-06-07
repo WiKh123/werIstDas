@@ -37,7 +37,7 @@ async function getImageUrl(person) {
   try {
     const url = 'https://en.wikipedia.org/w/api.php?action=query' +
       '&titles=' + encodeURIComponent(key) +
-      '&prop=pageimages&format=json&pithumbsize=500&origin=*';
+      '&prop=pageimages&piprop=thumbnail&pithumbsize=500&redirects=1&format=json&origin=*';
     const res = await fetch(url);
     const data = await res.json();
     const pages = data && data.query && data.query.pages;
@@ -403,10 +403,20 @@ function handleRoom(room) {
   }
 }
 
+function showImageStatus(text) {
+  const s=document.getElementById('image-status');
+  if(s){ s.textContent=text; s.classList.remove('hidden'); }
+}
+function hideImageStatus() {
+  const s=document.getElementById('image-status');
+  if(s) s.classList.add('hidden');
+}
 function setImage(imgEl, src) {
-  if (!src) return;
-  imgEl.onerror = function() { imgEl.style.display='none'; };
-  imgEl.onload  = function() { imgEl.style.display=''; };
+  if (!src) { imgEl.onerror=null; imgEl.removeAttribute('src'); imgEl.style.display='none'; showImageStatus('Bild nicht verfügbar 🙈'); return; }
+  showImageStatus('Lädt…');
+  imgEl.onerror = function() { imgEl.style.display='none'; showImageStatus('Bild nicht verfügbar 🙈'); };
+  imgEl.onload  = function() { imgEl.style.display=''; hideImageStatus(); };
+  imgEl.style.display='';
   imgEl.src = src;
 }
 
@@ -426,8 +436,21 @@ function startRoundUI(room) {
   hideSuggestions();
   updateTimer(30);
   const imgEl=document.getElementById('person-image');
-  imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
-  if(room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
+  imgEl.onerror=null; imgEl.onload=null; imgEl.removeAttribute('src'); imgEl.style.display='none';
+  if(room.currentImageUrl) {
+    setImage(imgEl, room.currentImageUrl);
+  } else {
+    // Host hatte keine URL – Client versucht es selbst
+    showImageStatus('Lädt…');
+    const person=pool[currentPersonIndex];
+    const expectRound=room.currentRound;
+    if(person) getImageUrl(person).then(url=>{
+      if(currentRoomSnapshot && currentRoomSnapshot.currentRound===expectRound && currentRoomSnapshot.state==='playing') {
+        if(url) setImage(imgEl, url); else showImageStatus('Bild nicht verfügbar 🙈');
+      }
+    });
+    else showImageStatus('Bild nicht verfügbar 🙈');
+  }
   updateSkipButton(room);
   if(isHost) startHostTimer();
   showScreen('game');
