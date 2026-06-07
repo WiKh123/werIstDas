@@ -1,4 +1,4 @@
-// ── State ──────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────────────────
 let db, auth;
 let uid = null;
 let myName = '';
@@ -18,9 +18,9 @@ let currentSuggestions = [];
 const processedGuessUids = new Set();
 const imageUrlCache = {};
 
-// ── Wikipedia Image Loader ─────────────────────────────────
+// ── Wikipedia Image Loader ─────────────────────────────────────────────────
 async function getImageUrl(person) {
-  const key = person.wikiTitle;
+  const key = person && person.wikiTitle;
   if (!key) return null;
   if (imageUrlCache[key]) return imageUrlCache[key];
   try {
@@ -41,7 +41,7 @@ function preloadAllImages(pool) {
   (pool || PERSONS).forEach(p => getImageUrl(p));
 }
 
-// ── Pool helpers ───────────────────────────────────────────
+// ── Pool helpers ───────────────────────────────────────────────────────────
 function getPool(room) {
   const p = room && room.personPool;
   if (!p) return PERSONS;
@@ -112,7 +112,7 @@ async function addPersonToPool() {
   btn.disabled = false;
 }
 
-// ── Firebase Init ─────────────────────────────────────────
+// ── Firebase Init ─────────────────────────────────────────────────────────
 async function initFirebase() {
   firebase.initializeApp(FIREBASE_CONFIG);
   db   = firebase.database();
@@ -121,7 +121,7 @@ async function initFirebase() {
   uid  = auth.currentUser.uid;
 }
 
-// ── Helpers ────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 function genCode() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:4}, () => c[Math.floor(Math.random()*c.length)]).join('');
@@ -145,14 +145,24 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Screen ──────────────────────────────────────────────
+// ── Firebase write helper with timeout ────────────────────────────────────
+function fbUpdate(ref, data, timeoutMs = 8000) {
+  return Promise.race([
+    ref.update(data),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firebase Timeout – bitte Seite neu laden.')), timeoutMs)
+    )
+  ]);
+}
+
+// ── Screen ──────────────────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   window.scrollTo(0,0);
 }
 
-// ── Render ─────────────────────────────────────────────
+// ── Render ─────────────────────────────────────────────────────────────────
 const MEDALS = ['🥇','🥈','🥉'];
 
 function renderLobbyPlayers(players, hostUid) {
@@ -187,7 +197,7 @@ function updateTimer(t) {
   if(txt) txt.textContent=t;
 }
 
-// ── Autocomplete ─────────────────────────────────────────
+// ── Autocomplete ─────────────────────────────────────────────────────────
 function hideSuggestions() {
   const box=document.getElementById('guess-suggestions');
   box.className='guess-suggestions hidden';
@@ -227,7 +237,7 @@ function pickSuggestion(i) {
   doGuess();
 }
 
-// ── Room Operations ───────────────────────────────────────
+// ── Room Operations ───────────────────────────────────────────────────────
 async function createRoom(name) {
   const code=genCode();
   const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||''}));
@@ -267,14 +277,14 @@ async function joinRoom(name, code) {
   showScreen('lobby');
 }
 
-// ── Room Subscription ────────────────────────────────────
+// ── Room Subscription ────────────────────────────────────────────────────
 function subscribeRoom() {
   if(roomRef){roomRef.off();roomRef=null;}
   roomRef=db.ref(`rooms/${roomCode}`);
   roomRef.on('value', snap=>{if(snap.exists()) handleRoom(snap.val());});
 }
 
-// ── Room State Machine ───────────────────────────────────
+// ── Room State Machine ───────────────────────────────────────────────────
 function handleRoom(room) {
   currentRoomSnapshot = room;
   const {state,players,host,currentRound,timeLeft,roundResult}=room;
@@ -352,7 +362,6 @@ function startRoundUI(room) {
   hasGuessedThisRound=false;
   const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
-  const person=pool[currentPersonIndex];
 
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
   const gi=document.getElementById('guess-input');
@@ -373,7 +382,7 @@ function startRoundUI(room) {
   showScreen('game');
 }
 
-// ── Player: Submit Guess (Freitext) ───────────────────────────
+// ── Player: Submit Guess ──────────────────────────────────────────────────
 async function doGuess() {
   if(hasGuessedThisRound||currentPersonIndex===null||!currentRoomSnapshot) return;
   const guess=document.getElementById('guess-input').value.trim();
@@ -396,7 +405,7 @@ async function doGuess() {
   }
 }
 
-// ── Host Timer ───────────────────────────────────────────
+// ── Host Timer ────────────────────────────────────────────────────────────
 function startHostTimer() {
   if(hostTimerInterval) clearInterval(hostTimerInterval);
   let t=30;
@@ -407,7 +416,7 @@ function startHostTimer() {
   },1000);
 }
 
-// ── Host: Validate Guesses ───────────────────────────────
+// ── Host: Validate Guesses ────────────────────────────────────────────────
 async function hostProcessGuesses(room) {
   const {guesses,players,rounds,currentRound,timeLeft}=room;
   const pool=getPool(room);
@@ -432,10 +441,10 @@ async function hostProcessGuesses(room) {
 async function hostEndRound() {
   if(roundEndedFlag) return;
   roundEndedFlag=true;
-  const snap=await db.ref(`rooms/${roomCode}`).get();
-  const roomData=snap.val();
-  const {rounds,currentRound,totalRounds,currentImageUrl}=roomData;
-  const pool=getPool(roomData);
+  // Use currentRoomSnapshot (live-synced) – no extra .get() needed
+  const room=currentRoomSnapshot;
+  const {rounds,currentRound,totalRounds,currentImageUrl}=room;
+  const pool=getPool(room);
   const person=pool[rounds[currentRound]];
   const imageUrl=currentImageUrl||imageUrlCache[person.wikiTitle]||'';
   await db.ref(`rooms/${roomCode}`).update({
@@ -444,16 +453,16 @@ async function hostEndRound() {
   });
 }
 
-// ── Host: Start Game ────────────────────────────────────
+// ── Host: Start Game ──────────────────────────────────────────────────────
 async function hostStartGame() {
   const btn=document.getElementById('btn-start');
   btn.disabled=true;
   const origText=btn.textContent;
   btn.textContent='Starte…';
   try {
-    const snap=await db.ref(`rooms/${roomCode}`).get();
-    const room=snap.val();
-    if(!room){ throw new Error('Raum nicht gefunden. Bitte neu laden.'); }
+    // Use already-synced snapshot – avoids hanging .get() while listener is active
+    const room=currentRoomSnapshot;
+    if(!room){ throw new Error('Raum nicht geladen. Bitte Seite neu laden.'); }
     const pool=getPool(room);
     if(!pool.length){ throw new Error('Der Pool ist leer. Bitte Personen hinzufügen.'); }
     const allIndices=shuffle(pool.map((_,i)=>i));
@@ -461,7 +470,7 @@ async function hostStartGame() {
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-    await db.ref(`rooms/${roomCode}`).update({
+    await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       totalRounds:rounds.length, rounds,
       state:'playing', currentRound:0,
@@ -469,51 +478,58 @@ async function hostStartGame() {
       currentImageUrl:'',
     });
 
-    getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
-    rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
+    if(pool[rounds[0]]) {
+      getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+    }
+    rounds.slice(1).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
   } catch(e) {
     console.error('Start fehlgeschlagen:', e);
-    alert('Spiel konnte nicht gestartet werden:\n' + (e && e.message ? e.message : e));
+    alert('Spiel konnte nicht gestartet werden:\n' + (e && e.message ? e.message : String(e)));
     btn.disabled=false;
     btn.textContent=origText;
   }
 }
 
-// ── Host: Next Round ───────────────────────────────────
+// ── Host: Next Round ──────────────────────────────────────────────────────
 async function hostNextRound() {
   const btn=document.getElementById('btn-next');
   btn.disabled=true;
   try {
-    const snap=await db.ref(`rooms/${roomCode}`).get();
-    const room=snap.val();
-    if(room.roundResult?.isLastRound){await db.ref(`rooms/${roomCode}/state`).set('finished');return;}
+    const room=currentRoomSnapshot;
+    if(!room){ throw new Error('Raum nicht geladen.'); }
+    if(room.roundResult&&room.roundResult.isLastRound){
+      await fbUpdate(db.ref(`rooms/${roomCode}`), {state:'finished'});
+      return;
+    }
     const nextRound=room.currentRound+1;
     const pool=getPool(room);
     const nextPerson=pool[room.rounds[nextRound]];
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-    await db.ref(`rooms/${roomCode}`).update({
+    await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       state:'playing', currentRound:nextRound,
       timeLeft:30, roundResult:null, guesses:null,
       currentImageUrl:'',
     });
 
-    getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+    if(nextPerson) {
+      getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
+    }
   } catch(e) {
     console.error('Nächste Runde fehlgeschlagen:', e);
-    alert('Nächste Runde konnte nicht gestartet werden:\n' + (e && e.message ? e.message : e));
+    alert('Nächste Runde konnte nicht gestartet werden:\n' + (e && e.message ? e.message : String(e)));
   } finally {
     btn.disabled=false;
   }
 }
 
-// ── Error helpers ──────────────────────────────────────
+// ── Error helpers ──────────────────────────────────────────────────────────
 function showJoinError(msg){const el=document.getElementById('join-error');el.textContent=msg;el.classList.remove('hidden');}
 function clearJoinError(){document.getElementById('join-error').classList.add('hidden');}
 
-// ── Boot ──────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async()=>{
   const rdisplay=document.getElementById('rounds-display');
   document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;}};
@@ -539,7 +555,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   });
 
   document.getElementById('btn-manage-pool').onclick=()=>{
-    db.ref(`rooms/${roomCode}`).get().then(snap=>{ if(snap.exists()) renderPoolScreen(snap.val()); });
+    if(currentRoomSnapshot) renderPoolScreen(currentRoomSnapshot);
     showScreen('pool');
   };
   document.getElementById('btn-pool-back').onclick=()=>showScreen('lobby');
