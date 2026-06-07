@@ -2,7 +2,9 @@
 const CATEGORY_META = [
   { id: 'politik',    label: 'Politik',          icon: '🏗️' },
   { id: 'wirtschaft', label: 'Wirtschaft & Tech', icon: '💼' },
-  { id: 'kultur',     label: 'Kultur & Sport',    icon: '🎭' },
+  { id: 'sport',      label: 'Sport',             icon: '⚽' },
+  { id: 'musik',      label: 'Musik',             icon: '🎵' },
+  { id: 'film',       label: 'Film & TV',         icon: '🎬' },
   { id: 'geschichte', label: 'Geschichte',        icon: '📚' },
 ];
 
@@ -58,7 +60,6 @@ function getPool(room) {
   const catArr = Array.isArray(cats) ? cats : Object.values(cats);
   if (!catArr.length) return base;
   const catSet = new Set(catArr);
-  // persons without a category (custom-added) always pass through
   return base.filter(person => !person.category || catSet.has(person.category));
 }
 
@@ -73,7 +74,7 @@ async function toggleCategory(catId) {
   const cats = getSelectedCats(currentRoomSnapshot);
   const idx = cats.indexOf(catId);
   if (idx >= 0) {
-    if (cats.length <= 1) return; // always keep at least one
+    if (cats.length <= 1) return;
     cats.splice(idx, 1);
   } else {
     cats.push(catId);
@@ -261,7 +262,7 @@ function updateSuggestions() {
     if(cands.some(c=>c.startsWith(q)) && !seen.has(p.name)){ seen.add(p.name); matches.push(p); }
   }
   for(const p of pool){
-    const cands=[p.name,...(p.aliases||[])].map(norm);
+  const cands=[p.name,...(p.aliases||[])].map(norm);
     if(cands.some(c=>c.includes(q)) && !seen.has(p.name)){ seen.add(p.name); matches.push(p); }
   }
   const top=matches.slice(0,6);
@@ -503,7 +504,7 @@ async function hostStartGame() {
     const room=currentRoomSnapshot;
     if(!room) throw new Error('Raum nicht geladen. Bitte Seite neu laden.');
     const pool=getPool(room);
-    if(!pool.length) throw new Error('Keine Personen in den gewählten Kategorien. Bitte Kategorie auswählen.');
+    if(!pool.length) throw new Error('Keine Personen in den gewählten Kategorien.');
     const allIndices=shuffle(pool.map((_,i)=>i));
     const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
     const resets={};
