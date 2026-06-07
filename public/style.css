@@ -35,6 +35,9 @@ input::placeholder { color:var(--muted); }
 .btn.primary:hover:not(:disabled) { background:var(--accent-dark); opacity:1; }
 .btn.secondary { background:var(--card2); border:1.5px solid var(--border); color:var(--text); width:auto; white-space:nowrap; }
 
+.btn-text-link { background:none; border:none; color:var(--muted); font-size:.82rem; cursor:pointer; padding:.35rem; text-align:center; width:100%; margin-top:.15rem; }
+.btn-text-link:hover { color:var(--text); }
+
 .divider { display:flex; align-items:center; gap:.75rem; margin:1rem 0; color:var(--muted); font-size:.9rem; }
 .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
 
@@ -57,7 +60,19 @@ input::placeholder { color:var(--muted); }
 .player-name-text { flex:1; font-weight:500; }
 .host-badge { font-size:.72rem; background:var(--accent); color:#fff; padding:.15rem .5rem; border-radius:20px; font-weight:600; }
 
-.pool-lobby-btn { width:100%; margin-bottom:.75rem; text-align:center; }
+/* Category chips */
+.cat-section { margin-bottom:.85rem; }
+.cat-section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.55rem; }
+.cat-section-label { font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; font-weight:600; }
+.cat-count-total { font-size:.88rem; color:var(--accent); font-weight:700; }
+.category-chips { display:flex; flex-wrap:wrap; gap:.45rem; }
+.cat-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .8rem; border-radius:20px; border:1.5px solid var(--border); background:var(--card2); color:var(--muted); cursor:pointer; font-size:.85rem; font-weight:500; transition:background .15s,border-color .15s,color .15s; }
+.cat-chip.active { border-color:var(--accent); background:rgba(124,111,255,.15); color:var(--text); }
+.cat-chip.active:hover:not(:disabled) { background:rgba(124,111,255,.28); }
+.cat-chip:not(.active):hover:not(:disabled) { border-color:var(--muted); color:var(--text); }
+.cat-chip:disabled { opacity:.45; cursor:default; }
+.cat-chip-count { font-size:.75rem; color:var(--muted); background:rgba(255,255,255,.07); border-radius:10px; padding:.05rem .38rem; margin-left:.1rem; }
+.cat-chip.active .cat-chip-count { color:var(--accent); }
 
 .rounds-selector { display:flex; align-items:center; justify-content:space-between; background:var(--card2); border-radius:10px; padding:.75rem 1rem; margin-bottom:.75rem; }
 .rounds-selector label { color:var(--muted); font-size:.95rem; }
@@ -138,4 +153,5 @@ input::placeholder { color:var(--muted); }
   .card { padding:1.5rem 1.1rem; }
   h1 { font-size:1.8rem; }
   .room-code-box strong { font-size:2rem; letter-spacing:.2em; }
+  .cat-chip { font-size:.8rem; padding:.4rem .65rem; }
 }

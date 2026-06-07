@@ -1,3 +1,11 @@
+// ── Category metadata ────────────────────────────────────────────────────────
+const CATEGORY_META = [
+  { id: 'politik',    label: 'Politik',          icon: '🏗️' },
+  { id: 'wirtschaft', label: 'Wirtschaft & Tech', icon: '💼' },
+  { id: 'kultur',     label: 'Kultur & Sport',    icon: '🎭' },
+  { id: 'geschichte', label: 'Geschichte',        icon: '📚' },
+];
+
 // ── State ──────────────────────────────────────────────────────────────────
 let db, auth;
 let uid = null;
@@ -44,17 +52,58 @@ function preloadAllImages(pool) {
 // ── Pool helpers ───────────────────────────────────────────────────────────
 function getPool(room) {
   const p = room && room.personPool;
-  if (!p) return PERSONS;
-  return Array.isArray(p) ? p : Object.values(p);
+  const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
+  const cats = room && room.selectedCategories;
+  if (!cats) return base;
+  const catArr = Array.isArray(cats) ? cats : Object.values(cats);
+  if (!catArr.length) return base;
+  const catSet = new Set(catArr);
+  // persons without a category (custom-added) always pass through
+  return base.filter(person => !person.category || catSet.has(person.category));
+}
+
+function getSelectedCats(room) {
+  const cats = room && room.selectedCategories;
+  if (!cats) return CATEGORY_META.map(c => c.id);
+  return Array.isArray(cats) ? [...cats] : Object.values(cats);
+}
+
+async function toggleCategory(catId) {
+  if (!isHost || !currentRoomSnapshot) return;
+  const cats = getSelectedCats(currentRoomSnapshot);
+  const idx = cats.indexOf(catId);
+  if (idx >= 0) {
+    if (cats.length <= 1) return; // always keep at least one
+    cats.splice(idx, 1);
+  } else {
+    cats.push(catId);
+  }
+  await db.ref(`rooms/${roomCode}/selectedCategories`).set(cats);
+}
+
+function renderCategoryChips(room) {
+  const container = document.getElementById('category-chips');
+  if (!container) return;
+  const p = room && room.personPool;
+  const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
+  const selectedSet = new Set(getSelectedCats(room));
+  const onlyOne = selectedSet.size === 1;
+  container.innerHTML = CATEGORY_META.map(cat => {
+    const active = selectedSet.has(cat.id);
+    const cantDeselect = active && onlyOne;
+    const count = base.filter(pr => pr.category === cat.id).length;
+    return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
+  }).join('');
 }
 
 function renderPoolScreen(room) {
-  const pool = getPool(room);
+  const p = room && room.personPool;
+  const pool = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
   document.getElementById('pool-screen-count').textContent = pool.length + ' Personen';
   document.getElementById('pool-person-list').innerHTML = pool.length
-    ? pool.map((p, i) =>
+    ? pool.map((pr, i) =>
         `<div class="pool-item">
-          <span class="pool-item-name">${esc(p.name)}</span>
+          <span class="pool-item-name">${esc(pr.name)}</span>
           <button class="pool-remove-btn" onclick="removePersonFromPool(${i})">×</button>
         </div>`
       ).join('')
@@ -73,14 +122,12 @@ async function addPersonToPool() {
   const input = document.getElementById('pool-name-input');
   const name = input.value.trim();
   if (!name) return;
-
   const btn = document.getElementById('btn-add-person');
   const fb = document.getElementById('pool-feedback');
   btn.disabled = true;
   fb.textContent = 'Suche auf Wikipedia…';
   fb.className = 'pool-feedback muted';
   fb.classList.remove('hidden');
-
   try {
     const searchUrl = 'https://en.wikipedia.org/w/api.php?action=query&list=search' +
       '&srsearch=' + encodeURIComponent(name) +
@@ -91,16 +138,13 @@ async function addPersonToPool() {
     const wikiTitle = (results && results.length > 0)
       ? results[0].title.replace(/\s+/g, '_')
       : name.replace(/\s+/g, '_');
-
     const lastName = name.split(' ').at(-1);
     const newPerson = { name, aliases: [lastName], wikiTitle, info: '' };
-
     const snap = await db.ref(`rooms/${roomCode}/personPool`).get();
     const raw = snap.val() || [];
     const pool = Array.isArray(raw) ? [...raw] : Object.values(raw);
     pool.push(newPerson);
     await db.ref(`rooms/${roomCode}/personPool`).set(pool);
-
     input.value = '';
     fb.textContent = '✓ ' + name + ' hinzugefügt';
     fb.className = 'pool-feedback correct';
@@ -145,13 +189,11 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Firebase write helper with timeout ────────────────────────────────────
-function fbUpdate(ref, data, timeoutMs = 8000) {
+// ── Firebase write with timeout ──────────────────────────────────────────────
+function fbUpdate(ref, data, ms=8000) {
   return Promise.race([
     ref.update(data),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Firebase Timeout – bitte Seite neu laden.')), timeoutMs)
-    )
+    new Promise((_,reject) => setTimeout(() => reject(new Error('Firebase Timeout – bitte Seite neu laden.')), ms))
   ]);
 }
 
@@ -240,10 +282,11 @@ function pickSuggestion(i) {
 // ── Room Operations ───────────────────────────────────────────────────────
 async function createRoom(name) {
   const code=genCode();
-  const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||''}));
+  const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||'',category:p.category||''}));
   await db.ref(`rooms/${code}`).set({
     host:uid, state:'lobby',
     personPool:defaultPool,
+    selectedCategories: CATEGORY_META.map(c => c.id),
     rounds:null, totalRounds:null, currentRound:-1,
     timeLeft:30, roundResult:null, currentImageUrl:'',
     players:{[uid]:{name,score:0,hasGuessed:false}},
@@ -300,6 +343,7 @@ function handleRoom(room) {
       roundsCount=Math.max(3,currentPoolSize);
       rdisplay.textContent=roundsCount;
     }
+    renderCategoryChips(room);
     if(document.getElementById('screen-pool').classList.contains('active')){
       renderPoolScreen(room);
     }
@@ -362,7 +406,6 @@ function startRoundUI(room) {
   hasGuessedThisRound=false;
   const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
-
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
   const gi=document.getElementById('guess-input');
   gi.value=''; gi.disabled=false;
@@ -373,11 +416,9 @@ function startRoundUI(room) {
   document.getElementById('my-score').textContent=`${room.players[uid]?.score||0} Pkt.`;
   hideSuggestions();
   updateTimer(30);
-
   const imgEl=document.getElementById('person-image');
   imgEl.src=''; imgEl.style.display=''; imgEl.alt='Lädt...';
   if(room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
-
   if(isHost) startHostTimer();
   showScreen('game');
 }
@@ -441,7 +482,6 @@ async function hostProcessGuesses(room) {
 async function hostEndRound() {
   if(roundEndedFlag) return;
   roundEndedFlag=true;
-  // Use currentRoomSnapshot (live-synced) – no extra .get() needed
   const room=currentRoomSnapshot;
   const {rounds,currentRound,totalRounds,currentImageUrl}=room;
   const pool=getPool(room);
@@ -460,16 +500,14 @@ async function hostStartGame() {
   const origText=btn.textContent;
   btn.textContent='Starte…';
   try {
-    // Use already-synced snapshot – avoids hanging .get() while listener is active
     const room=currentRoomSnapshot;
-    if(!room){ throw new Error('Raum nicht geladen. Bitte Seite neu laden.'); }
+    if(!room) throw new Error('Raum nicht geladen. Bitte Seite neu laden.');
     const pool=getPool(room);
-    if(!pool.length){ throw new Error('Der Pool ist leer. Bitte Personen hinzufügen.'); }
+    if(!pool.length) throw new Error('Keine Personen in den gewählten Kategorien. Bitte Kategorie auswählen.');
     const allIndices=shuffle(pool.map((_,i)=>i));
     const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
-
     await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       totalRounds:rounds.length, rounds,
@@ -477,14 +515,11 @@ async function hostStartGame() {
       timeLeft:30, roundResult:null, guesses:null,
       currentImageUrl:'',
     });
-
-    if(pool[rounds[0]]) {
-      getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
-    }
+    if(pool[rounds[0]]) getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
     rounds.slice(1).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
   } catch(e) {
     console.error('Start fehlgeschlagen:', e);
-    alert('Spiel konnte nicht gestartet werden:\n' + (e && e.message ? e.message : String(e)));
+    alert('Spiel konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
     btn.disabled=false;
     btn.textContent=origText;
   }
@@ -496,7 +531,7 @@ async function hostNextRound() {
   btn.disabled=true;
   try {
     const room=currentRoomSnapshot;
-    if(!room){ throw new Error('Raum nicht geladen.'); }
+    if(!room) throw new Error('Raum nicht geladen.');
     if(room.roundResult&&room.roundResult.isLastRound){
       await fbUpdate(db.ref(`rooms/${roomCode}`), {state:'finished'});
       return;
@@ -506,20 +541,16 @@ async function hostNextRound() {
     const nextPerson=pool[room.rounds[nextRound]];
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
-
     await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       state:'playing', currentRound:nextRound,
       timeLeft:30, roundResult:null, guesses:null,
       currentImageUrl:'',
     });
-
-    if(nextPerson) {
-      getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
-    }
+    if(nextPerson) getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
   } catch(e) {
     console.error('Nächste Runde fehlgeschlagen:', e);
-    alert('Nächste Runde konnte nicht gestartet werden:\n' + (e && e.message ? e.message : String(e)));
+    alert('Nächste Runde konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
   } finally {
     btn.disabled=false;
   }
@@ -554,7 +585,8 @@ window.addEventListener('DOMContentLoaded', async()=>{
     if(e.key==='Enter'){const code=document.getElementById('room-code').value.trim();if(code)doJoin();else document.getElementById('btn-create').click();}
   });
 
-  document.getElementById('btn-manage-pool').onclick=()=>{
+  const mgBtn=document.getElementById('btn-manage-pool');
+  if(mgBtn) mgBtn.onclick=()=>{
     if(currentRoomSnapshot) renderPoolScreen(currentRoomSnapshot);
     showScreen('pool');
   };

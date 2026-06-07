@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Wer ist das?</title>
-  <link rel="stylesheet" href="style.css?v=20260607b">
+  <link rel="stylesheet" href="style.css?v=20260607c">
 </head>
 <body>
 
@@ -38,7 +38,13 @@
       </div>
       <div id="player-list" class="player-list"></div>
       <div id="host-controls" class="hidden">
-        <button id="btn-manage-pool" class="btn secondary pool-lobby-btn">👥 Pool: <span id="pool-count-label">20 Personen</span></button>
+        <div class="cat-section">
+          <div class="cat-section-header">
+            <span class="cat-section-label">Kategorien</span>
+            <span id="pool-count-label" class="cat-count-total">49 Personen</span>
+          </div>
+          <div id="category-chips" class="category-chips"></div>
+        </div>
         <div class="rounds-selector">
           <label>Anzahl Runden</label>
           <div class="rounds-row">
@@ -48,6 +54,7 @@
           </div>
         </div>
         <button id="btn-start" class="btn primary">Spiel starten 🚀</button>
+        <button id="btn-manage-pool" class="btn-text-link">Personen manuell anpassen ✏</button>
       </div>
       <p id="waiting-msg" class="muted">Warte auf den Host…</p>
     </div>
@@ -126,12 +133,11 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=20260607b"></script>
-  <script src="persons.js?v=20260607b"></script>
-  <script src="app.js?v=20260607b"></script>
+  <script src="firebase-config.js?v=20260607c"></script>
+  <script src="persons.js?v=20260607c"></script>
+  <script src="app.js?v=20260607c"></script>
 </body>
 </html>
