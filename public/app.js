@@ -14,8 +14,6 @@ let roundEndedFlag = false;
 let roomRef = null;
 let currentPoolSize = PERSONS.length;
 let currentRoomSnapshot = null;
-let roundOptions = [];
-let feedbackTimer = null;
 const processedGuessUids = new Set();
 const imageUrlCache = {};
 
@@ -27,7 +25,7 @@ async function getImageUrl(person) {
   try {
     const url = 'https://en.wikipedia.org/w/api.php?action=query' +
       '&titles=' + encodeURIComponent(key) +
-      '&prop=pageimages&format=json&pithumbsize=400&origin=*';
+      '&prop=pageimages&format=json&pithumbsize=500&origin=*';
     const res = await fetch(url);
     const data = await res.json();
     const pages = data && data.query && data.query.pages;
@@ -132,7 +130,12 @@ function shuffle(arr) {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-function norm(s) { return s.toLowerCase().trim().replace(/\s+/g,' '); }
+function norm(s) {
+  return s.toLowerCase().trim()
+    .replace(/\s+/g,' ')
+    .replace(/[ä]/g,'ae').replace(/[ö]/g,'oe').replace(/[ü]/g,'ue').replace(/[ß]/g,'ss')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
 function isCorrect(guess, person) {
   const g=norm(guess), full=norm(person.name), last=full.split(' ').at(-1);
   return g===full || g===last || (person.aliases||[]).map(norm).includes(g);
@@ -264,9 +267,8 @@ function handleRoom(room) {
     renderScores(players,'live-scores',true);
     const me=players[uid];
     if(me) document.getElementById('my-score').textContent=`${me.score} Pkt.`;
-    // Update image if host just wrote the URL
     const imgEl=document.getElementById('person-image');
-    if(room.currentImageUrl && !imgEl.src.includes('wikimedia')) setImage(imgEl, room.currentImageUrl);
+    if(room.currentImageUrl && imgEl.getAttribute('src')!==room.currentImageUrl) setImage(imgEl, room.currentImageUrl);
     if(isHost&&room.guesses) hostProcessGuesses(room);
     return;
   }
@@ -307,23 +309,19 @@ function setImage(imgEl, src) {
 
 function startRoundUI(room) {
   hasGuessedThisRound=false;
-  clearTimeout(feedbackTimer);
   const pool=getPool(room);
   currentPersonIndex=room.rounds[room.currentRound];
   const person=pool[currentPersonIndex];
 
   document.getElementById('round-label').textContent=`Runde ${room.currentRound+1}/${room.totalRounds}`;
-  document.getElementById('guess-toast').className='guess-toast hidden';
+  const gi=document.getElementById('guess-input');
+  gi.value=''; gi.disabled=false;
+  document.getElementById('btn-guess').disabled=false;
+  document.getElementById('guess-feedback').className='hidden';
   document.getElementById('correct-overlay').classList.add('hidden');
   document.getElementById('live-scores').innerHTML='';
   document.getElementById('my-score').textContent=`${room.players[uid]?.score||0} Pkt.`;
   updateTimer(30);
-
-  // Build shuffled name chips from the full pool
-  roundOptions=shuffle([...pool]);
-  document.getElementById('name-options').innerHTML=roundOptions.map((p,i)=>
-    `<button class="name-chip" onclick="guessOption(${i})">${esc(p.name)}</button>`
-  ).join('');
 
   // Load image: host stores URL in Firebase, clients read from there
   const imgEl=document.getElementById('person-image');
@@ -331,7 +329,6 @@ function startRoundUI(room) {
   if(room.currentImageUrl) {
     setImage(imgEl, room.currentImageUrl);
   } else {
-    // Fallback for own browser (mainly host before Firebase update arrives)
     getImageUrl(person).then(src=>{ if(src) setImage(imgEl, src); });
   }
 
@@ -339,33 +336,25 @@ function startRoundUI(room) {
   showScreen('game');
 }
 
-// ── Player: Guess from chip ────────────────────────────────
-async function guessOption(idx) {
+// ── Player: Submit Guess (Freitext) ───────────────────────────
+async function doGuess() {
   if(hasGuessedThisRound||currentPersonIndex===null||!currentRoomSnapshot) return;
-  const chips=document.querySelectorAll('.name-chip');
-  const chip=chips[idx];
-  if(!chip||chip.disabled) return;
-  chip.disabled=true;
-
-  const guessedPerson=roundOptions[idx];
-  const correctPerson=getPool(currentRoomSnapshot)[currentPersonIndex];
-  const correct=isCorrect(guessedPerson.name, correctPerson);
-  chip.classList.add(correct?'chip-correct':'chip-wrong');
-
-  const toast=document.getElementById('guess-toast');
-  clearTimeout(feedbackTimer);
-
-  if(correct) {
-    chips.forEach(b=>b.disabled=true);
+  const guess=document.getElementById('guess-input').value.trim();
+  if(guess.length<2) return;
+  const person=getPool(currentRoomSnapshot)[currentPersonIndex];
+  const fb=document.getElementById('guess-feedback');
+  if(isCorrect(guess,person)) {
     hasGuessedThisRound=true;
+    document.getElementById('guess-input').disabled=true;
+    document.getElementById('btn-guess').disabled=true;
     document.getElementById('correct-overlay').classList.remove('hidden');
-    toast.textContent='✓ Richtig!';
-    toast.className='guess-toast correct';
-    await db.ref(`rooms/${roomCode}/guesses/${uid}`).set(guessedPerson.name);
+    fb.textContent='✓ Richtig! Punkte werden vergeben…';
+    fb.className='correct';
+    await db.ref(`rooms/${roomCode}/guesses/${uid}`).set(person.name);
   } else {
-    toast.textContent='✗ Falsch!';
-    toast.className='guess-toast wrong';
-    feedbackTimer=setTimeout(()=>{ toast.className='guess-toast hidden'; },1500);
+    fb.textContent='✗ Falsch! Versuch es nochmal.';
+    fb.className='wrong';
+    document.getElementById('guess-input').select();
   }
 }
 
@@ -427,7 +416,6 @@ async function hostStartGame() {
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  // Host fetches first round's image URL and distributes via Firebase
   const firstPerson=pool[rounds[0]];
   const currentImageUrl=await getImageUrl(firstPerson)||'';
 
@@ -439,7 +427,6 @@ async function hostStartGame() {
     currentImageUrl,
   });
 
-  // Pre-fetch remaining images in background
   rounds.slice(1).forEach(idx=>getImageUrl(pool[idx]));
 }
 
@@ -454,7 +441,6 @@ async function hostNextRound() {
   const resets={};
   Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
 
-  // Host fetches next round's image URL and distributes via Firebase
   const currentImageUrl=await getImageUrl(nextPerson)||'';
 
   await db.ref(`rooms/${roomCode}`).update({
@@ -473,7 +459,7 @@ function clearJoinError(){document.getElementById('join-error').classList.add('h
 window.addEventListener('DOMContentLoaded', async()=>{
   const rdisplay=document.getElementById('rounds-display');
   document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;}};
-  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(20,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;}};
+  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(50,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;}};
 
   document.getElementById('btn-create').onclick=async()=>{
     const name=document.getElementById('player-name').value.trim();
@@ -503,6 +489,8 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('pool-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')addPersonToPool();});
 
   document.getElementById('btn-start').onclick=hostStartGame;
+  document.getElementById('btn-guess').onclick=doGuess;
+  document.getElementById('guess-input').addEventListener('keydown',e=>{if(e.key==='Enter')doGuess();});
   document.getElementById('btn-next').onclick=hostNextRound;
   document.getElementById('btn-play-again').onclick=()=>{
     if(roomRef){roomRef.off();roomRef=null;}

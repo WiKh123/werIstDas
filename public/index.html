@@ -59,7 +59,7 @@
         <span id="pool-screen-count" class="pool-screen-count"></span>
       </div>
       <div class="add-person-row">
-        <input type="text" id="pool-name-input" placeholder="Name eingeben (z.B. Helmut Kohl)" maxlength="80" autocomplete="off">
+        <input type="text" id="pool-name-input" placeholder="Name eingeben (z.B. Helmut Schmidt)" maxlength="80" autocomplete="off">
         <button id="btn-add-person" class="btn secondary">+</button>
       </div>
       <p id="pool-feedback" class="pool-feedback hidden"></p>
@@ -84,9 +84,14 @@
       <img id="person-image" src="" alt="Wer ist das?">
       <div id="correct-overlay" class="correct-overlay hidden"><div class="correct-badge">✓ Richtig!</div></div>
     </div>
-    <div id="name-options" class="name-options"></div>
+    <div class="guess-area">
+      <div class="guess-input-row">
+        <input type="text" id="guess-input" placeholder="Wer ist diese Person?" autocomplete="off">
+        <button id="btn-guess" class="btn primary">Raten</button>
+      </div>
+      <div id="guess-feedback" class="hidden"></div>
+    </div>
     <div id="live-scores" class="live-scores"></div>
-    <div id="guess-toast" class="guess-toast hidden"></div>
   </div>
 
   <!-- ROUND END -->
