@@ -14,6 +14,7 @@ let roundEndedFlag = false;
 let roomRef = null;
 let currentPoolSize = PERSONS.length;
 let currentRoomSnapshot = null;
+let currentSuggestions = [];
 const processedGuessUids = new Set();
 const imageUrlCache = {};
 
@@ -120,7 +121,7 @@ async function initFirebase() {
   uid  = auth.currentUser.uid;
 }
 
-// ── Helpers ─────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────
 function genCode() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:4}, () => c[Math.floor(Math.random()*c.length)]).join('');
@@ -131,7 +132,7 @@ function shuffle(arr) {
   return a;
 }
 function norm(s) {
-  return s.toLowerCase().trim()
+  return String(s).toLowerCase().trim()
     .replace(/\s+/g,' ')
     .replace(/[ä]/g,'ae').replace(/[ö]/g,'oe').replace(/[ü]/g,'ue').replace(/[ß]/g,'ss')
     .normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -184,6 +185,47 @@ function updateTimer(t) {
   if(arc){arc.setAttribute('stroke-dasharray',`${pct},100`);arc.style.stroke=t<=10?'#ff5c5c':'var(--accent)';}
   const txt=document.getElementById('timer-text');
   if(txt) txt.textContent=t;
+}
+
+// ── Autocomplete ─────────────────────────────────────────
+function hideSuggestions() {
+  const box=document.getElementById('guess-suggestions');
+  box.className='guess-suggestions hidden';
+  box.innerHTML='';
+  currentSuggestions=[];
+}
+
+function updateSuggestions() {
+  const box=document.getElementById('guess-suggestions');
+  if(hasGuessedThisRound||!currentRoomSnapshot){ hideSuggestions(); return; }
+  const raw=document.getElementById('guess-input').value;
+  const q=norm(raw);
+  if(q.length<2){ hideSuggestions(); return; }
+  const pool=getPool(currentRoomSnapshot);
+  const seen=new Set();
+  const matches=[];
+  // Prefer matches that start with the query, then substring matches
+  for(const p of pool){
+    const cands=[p.name,...(p.aliases||[])].map(norm);
+    if(cands.some(c=>c.startsWith(q)) && !seen.has(p.name)){ seen.add(p.name); matches.push(p); }
+  }
+  for(const p of pool){
+    const cands=[p.name,...(p.aliases||[])].map(norm);
+    if(cands.some(c=>c.includes(q)) && !seen.has(p.name)){ seen.add(p.name); matches.push(p); }
+  }
+  const top=matches.slice(0,6);
+  if(!top.length){ hideSuggestions(); return; }
+  currentSuggestions=top;
+  box.innerHTML=top.map((p,i)=>`<div class="suggestion-item" onclick="pickSuggestion(${i})">${esc(p.name)}</div>`).join('');
+  box.className='guess-suggestions';
+}
+
+function pickSuggestion(i) {
+  const p=currentSuggestions[i];
+  if(!p) return;
+  document.getElementById('guess-input').value=p.name;
+  hideSuggestions();
+  doGuess();
 }
 
 // ── Room Operations ───────────────────────────────────────
@@ -321,6 +363,7 @@ function startRoundUI(room) {
   document.getElementById('correct-overlay').classList.add('hidden');
   document.getElementById('live-scores').innerHTML='';
   document.getElementById('my-score').textContent=`${room.players[uid]?.score||0} Pkt.`;
+  hideSuggestions();
   updateTimer(30);
 
   // Load image: host stores URL in Firebase, clients read from there
@@ -345,6 +388,7 @@ async function doGuess() {
   const fb=document.getElementById('guess-feedback');
   if(isCorrect(guess,person)) {
     hasGuessedThisRound=true;
+    hideSuggestions();
     document.getElementById('guess-input').disabled=true;
     document.getElementById('btn-guess').disabled=true;
     document.getElementById('correct-overlay').classList.remove('hidden');
@@ -490,7 +534,9 @@ window.addEventListener('DOMContentLoaded', async()=>{
 
   document.getElementById('btn-start').onclick=hostStartGame;
   document.getElementById('btn-guess').onclick=doGuess;
-  document.getElementById('guess-input').addEventListener('keydown',e=>{if(e.key==='Enter')doGuess();});
+  const guessInput=document.getElementById('guess-input');
+  guessInput.addEventListener('input',updateSuggestions);
+  guessInput.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSuggestions();doGuess();}});
   document.getElementById('btn-next').onclick=hostNextRound;
   document.getElementById('btn-play-again').onclick=()=>{
     if(roomRef){roomRef.off();roomRef=null;}

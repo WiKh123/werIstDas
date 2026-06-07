@@ -85,9 +85,12 @@
       <div id="correct-overlay" class="correct-overlay hidden"><div class="correct-badge">✓ Richtig!</div></div>
     </div>
     <div class="guess-area">
-      <div class="guess-input-row">
-        <input type="text" id="guess-input" placeholder="Wer ist diese Person?" autocomplete="off">
-        <button id="btn-guess" class="btn primary">Raten</button>
+      <div class="guess-input-wrap">
+        <div class="guess-input-row">
+          <input type="text" id="guess-input" placeholder="Wer ist diese Person?" autocomplete="off">
+          <button id="btn-guess" class="btn primary">Raten</button>
+        </div>
+        <div id="guess-suggestions" class="guess-suggestions hidden"></div>
       </div>
       <div id="guess-feedback" class="hidden"></div>
     </div>

@@ -102,9 +102,16 @@ input::placeholder { color:var(--muted); }
 .correct-badge { font-size:2.5rem; font-weight:900; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); }
 
 .guess-area { background:var(--card); padding:.85rem 1rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.guess-input-wrap { position:relative; }
 .guess-input-row { display:flex; gap:.6rem; }
 .guess-input-row input { flex:1; margin:0; border-radius:8px; }
 .guess-input-row .btn { width:auto; padding:.85rem 1.25rem; border-radius:8px; }
+
+.guess-suggestions { position:absolute; left:0; right:0; bottom:calc(100% + .4rem); background:var(--card2); border:1.5px solid var(--accent); border-radius:10px; overflow:hidden; z-index:50; box-shadow:0 -6px 24px rgba(0,0,0,.5); }
+.suggestion-item { padding:.7rem .9rem; cursor:pointer; font-size:.95rem; font-weight:500; border-bottom:1px solid var(--border); transition:background .12s; }
+.suggestion-item:last-child { border-bottom:none; }
+.suggestion-item:hover, .suggestion-item:active { background:var(--accent); color:#fff; }
+
 #guess-feedback { margin-top:.5rem; padding:.5rem .75rem; border-radius:8px; font-weight:600; font-size:.9rem; text-align:center; }
 #guess-feedback.correct { background:rgba(76,223,128,.15); color:var(--success); border:1px solid rgba(76,223,128,.3); }
 #guess-feedback.wrong { background:rgba(255,92,92,.12); color:var(--danger); border:1px solid rgba(255,92,92,.25); }
