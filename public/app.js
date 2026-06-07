@@ -20,19 +20,21 @@ async function getImageUrl(person) {
   const key = person.wikiTitle;
   if (imageUrlCache[key]) return imageUrlCache[key];
   try {
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${key}`,
-      { headers: { Accept: 'application/json' } }
-    );
+    const url = 'https://en.wikipedia.org/w/api.php?action=query' +
+      '&titles=' + encodeURIComponent(key) +
+      '&prop=pageimages&format=json&pithumbsize=400&origin=*';
+    const res = await fetch(url);
     const data = await res.json();
-    const src = data?.thumbnail?.source?.replace(/\/\d+px-/, '/400px-');
+    const pages = data && data.query && data.query.pages;
+    const page = pages && Object.values(pages)[0];
+    const src = page && page.thumbnail && page.thumbnail.source;
     if (src) imageUrlCache[key] = src;
     return src || null;
-  } catch { return null; }
+  } catch(e) { return null; }
 }
 
 function preloadAllImages() {
-  PERSONS.forEach(p => getImageUrl(p)); // fire-and-forget
+  PERSONS.forEach(p => getImageUrl(p));
 }
 
 // ── Firebase Init ─────────────────────────────────────────
@@ -204,6 +206,13 @@ function handleRoom(room) {
   }
 }
 
+function setImage(imgEl, src) {
+  if (!src) return;
+  imgEl.onerror = function() { imgEl.style.display='none'; };
+  imgEl.onload  = function() { imgEl.style.display=''; };
+  imgEl.src = src;
+}
+
 function startRoundUI(room) {
   hasGuessedThisRound=false;
   currentPersonIndex=room.rounds[room.currentRound];
@@ -219,14 +228,18 @@ function startRoundUI(room) {
   document.getElementById('my-score').textContent=`${room.players[uid]?.score||0} Pkt.`;
   updateTimer(30);
 
-  // Load image from Wikipedia
   const imgEl=document.getElementById('person-image');
   imgEl.src='';
+  imgEl.style.display='';
   imgEl.alt='Lädt...';
+
   if(imageUrlCache[person.wikiTitle]) {
-    imgEl.src=imageUrlCache[person.wikiTitle];
+    setImage(imgEl, imageUrlCache[person.wikiTitle]);
   } else {
-    getImageUrl(person).then(src=>{ if(src) imgEl.src=src; imgEl.alt='Wer ist das?'; });
+    getImageUrl(person).then(src => {
+      imgEl.alt='Wer ist das?';
+      setImage(imgEl, src);
+    });
   }
 
   if(isHost) startHostTimer();
