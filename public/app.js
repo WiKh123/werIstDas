@@ -509,14 +509,14 @@ async function hostStartGame() {
     const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+    const firstImageUrl = pool[rounds[0]] ? (await getImageUrl(pool[rounds[0]])||'') : '';
     await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       totalRounds:rounds.length, rounds,
       state:'playing', currentRound:0,
       timeLeft:30, roundResult:null, guesses:null,
-      currentImageUrl:'',
+      currentImageUrl:firstImageUrl,
     });
-    if(pool[rounds[0]]) getImageUrl(pool[rounds[0]]).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
     rounds.slice(1).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
   } catch(e) {
     console.error('Start fehlgeschlagen:', e);
@@ -542,13 +542,13 @@ async function hostNextRound() {
     const nextPerson=pool[room.rounds[nextRound]];
     const resets={};
     Object.keys(room.players||{}).forEach(pid=>{resets[`players/${pid}/hasGuessed`]=false;});
+    const nextImageUrl = nextPerson ? (await getImageUrl(nextPerson)||'') : '';
     await fbUpdate(db.ref(`rooms/${roomCode}`), {
       ...resets,
       state:'playing', currentRound:nextRound,
       timeLeft:30, roundResult:null, guesses:null,
-      currentImageUrl:'',
+      currentImageUrl:nextImageUrl,
     });
-    if(nextPerson) getImageUrl(nextPerson).then(url=>{ if(url) db.ref(`rooms/${roomCode}/currentImageUrl`).set(url); });
   } catch(e) {
     console.error('Nächste Runde fehlgeschlagen:', e);
     alert('Nächste Runde konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
