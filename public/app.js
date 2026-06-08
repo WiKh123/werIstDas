@@ -11,6 +11,7 @@ const CATEGORY_META = [
 
 const LS_CATS = 'wid_cats';
 const LS_CTRS = 'wid_ctrs';
+const LS_NAME = 'wid_name';
 
 function loadStoredCats() {
   try {
@@ -385,6 +386,7 @@ async function createRoom(name) {
   });
   db.ref(`rooms/${code}/players/${uid}/online`).onDisconnect().set(false);
   myName=name; roomCode=code; isHost=true; lastRoomState=null; lastCurrentRound=-99;
+  try { localStorage.setItem(LS_NAME, name); } catch {}
   subscribeRoom();
   document.getElementById('lobby-code').textContent=code;
   document.getElementById('host-controls').classList.remove('hidden');
@@ -404,6 +406,7 @@ async function joinRoom(name, code) {
   await db.ref(`rooms/${code}/players/${uid}`).set({name,score:0,hasGuessed:false});
   db.ref(`rooms/${code}/players/${uid}/online`).onDisconnect().set(false);
   myName=name; roomCode=code; isHost=false; lastRoomState=null; lastCurrentRound=-99;
+  try { localStorage.setItem(LS_NAME, name); } catch {}
   subscribeRoom();
   document.getElementById('lobby-code').textContent=code;
   document.getElementById('host-controls').classList.add('hidden');
@@ -744,6 +747,10 @@ function clearJoinError(){document.getElementById('join-error').classList.add('h
 
 // ── Boot ──────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async()=>{
+  try {
+    const saved=localStorage.getItem(LS_NAME);
+    if(saved) document.getElementById('player-name').value=saved;
+  } catch {}
   const rdisplay=document.getElementById('rounds-display');
   document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;}};
   document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(50,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;}};
