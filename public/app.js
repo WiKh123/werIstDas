@@ -85,9 +85,6 @@ async function getImageUrl(person) {
   } catch(e) { return null; }
 }
 
-function preloadAllImages(pool) {
-  (pool || PERSONS).forEach(p => getImageUrl(p));
-}
 
 // ── Pool helpers ───────────────────────────────────────────────────────────
 function getPool(room) {
@@ -441,7 +438,6 @@ function handleRoom(room) {
     if(document.getElementById('screen-pool').classList.contains('active')){
       renderPoolScreen(room);
     }
-    if(lastRoomState!=='lobby') preloadAllImages(pool);
     if(host===uid&&!isHost){isHost=true;document.getElementById('host-controls').classList.remove('hidden');document.getElementById('waiting-msg').classList.add('hidden');}
     if(isHost){const sb=document.getElementById('btn-start');if(sb&&sb.disabled){sb.disabled=false;sb.textContent='Spiel starten 🚀';}}
     lastRoomState='lobby'; return;
@@ -662,7 +658,7 @@ async function hostStartGame() {
       timeLeft:30, roundResult:null, guesses:null, skipVotes:null,
       currentImageUrl:firstImageUrl,
     });
-    rounds.slice(1).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
+    rounds.slice(1, 4).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
   } catch(e) {
     console.error('Start fehlgeschlagen:', e);
     alert('Spiel konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
@@ -694,6 +690,9 @@ async function hostNextRound() {
       timeLeft:30, roundResult:null, guesses:null, skipVotes:null,
       currentImageUrl:nextImageUrl,
     });
+    // warm up the round after next so the host never waits on Wikipedia
+    const lookAhead = pool[room.rounds[nextRound+1]];
+    if(lookAhead) getImageUrl(lookAhead);
   } catch(e) {
     console.error('Nächste Runde fehlgeschlagen:', e);
     alert('Nächste Runde konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
