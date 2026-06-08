@@ -1,11 +1,12 @@
 // ── Category metadata ────────────────────────────────────────────────────────
 const CATEGORY_META = [
-  { id: 'politik',    label: 'Politik',          icon: '🏗️' },
-  { id: 'wirtschaft', label: 'Wirtschaft & Tech', icon: '💼' },
-  { id: 'sport',      label: 'Sport',             icon: '⚽' },
-  { id: 'musik',      label: 'Musik',             icon: '🎵' },
-  { id: 'film',       label: 'Film & TV',         icon: '🎬' },
-  { id: 'geschichte', label: 'Geschichte',        icon: '📚' },
+  { id: 'politik',    label: 'Politik',              icon: '🏗️' },
+  { id: 'wirtschaft', label: 'Wirtschaft & Tech',    icon: '💼' },
+  { id: 'sport',      label: 'Sport',                icon: '⚽' },
+  { id: 'musik',      label: 'Musik',                icon: '🎵' },
+  { id: 'film',       label: 'Film & TV',            icon: '🎬' },
+  { id: 'geschichte', label: 'Geschichte',           icon: '📚' },
+  { id: 'fiktion',    label: 'Fiktive Charaktere',   icon: '🧙' },
 ];
 
 // ── Country metadata ─────────────────────────────────────────────────────────
