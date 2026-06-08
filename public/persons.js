@@ -343,7 +343,7 @@ const PERSONS = [
   { name: "Friedrich Nietzsche", category: "geschichte", country: "de", aliases: ["Nietzsche"], wikiTitle: "Friedrich_Nietzsche", info: "Deutscher Philosoph (1844–1900)" },
   { name: "Konfuzius", category: "geschichte", country: "intl", aliases: ["Confucius"], wikiTitle: "Confucius", info: "Chinesischer Philosoph (551–479 v. Chr.)" },
 
-  // ── Fiktive Charaktere (25) – nur Animations-/Comicfiguren & Gaming-Charaktere, keine echten Schauspieler ──
+  // ── Fiktive Charaktere (24) – nur Animations-/Comicfiguren & Gaming-Charaktere, keine echten Schauspieler ──
   { name: "Mickey Mouse", category: "fiktion", country: "us", aliases: ["Micky Maus","Mickey"], wikiTitle: "Mickey_Mouse", info: "Walt Disneys bekannteste Zeichentrickfigur" },
   { name: "Donald Duck", category: "fiktion", country: "us", aliases: ["Donald","Dagobert Duck"], wikiTitle: "Donald_Duck", info: "Aufbrausender Enterich aus Walt Disneys Zeichentrickwelt" },
   { name: "Homer Simpson", category: "fiktion", country: "us", aliases: ["Homer"], wikiTitle: "Homer_Simpson", info: "Tollpatschiger Vater der Familie Simpson aus Springfield" },
@@ -357,7 +357,6 @@ const PERSONS = [
   { name: "Obelix", category: "fiktion", country: "fr", aliases: [], wikiTitle: "Obelix", info: "Bester Freund von Asterix, bekannt für seinen Appetit auf Wildschweine" },
   { name: "Tintin", category: "fiktion", country: "intl", aliases: ["Tim","Tim und Struppi"], wikiTitle: "Tintin_(character)", info: "Junger belgischer Reporter und Weltentdecker (Tim und Struppi)" },
   { name: "Lucky Luke", category: "fiktion", country: "intl", aliases: [], wikiTitle: "Lucky_Luke", info: "Cowboy, der schneller schießt als sein Schatten (belgischer Comic)" },
-  { name: "Don Quijote", category: "fiktion", country: "es", aliases: ["Don Quixote","Quijote"], wikiTitle: "Don_Quixote", info: "Irrender Ritter aus Cervantes' Meisterwerk" },
   { name: "Pinocchio", category: "fiktion", country: "it", aliases: [], wikiTitle: "Pinocchio", info: "Hölzerne Puppe, die ein Mensch werden will (Carlo Collodi)" },
   { name: "Pumuckl", category: "fiktion", country: "de", aliases: [], wikiTitle: "Pumuckl", info: "Rotblonder Kobold aus der deutschen Kinderserie" },
   { name: "Winnie Puuh", category: "fiktion", country: "uk", aliases: ["Winnie the Pooh","Puuh","Pooh"], wikiTitle: "Winnie-the-Pooh", info: "Honig-liebender Teddybär aus A. A. Milnes Kindergeschichten" },
