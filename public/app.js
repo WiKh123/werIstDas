@@ -637,7 +637,7 @@ async function showLeaderboard() {
     const entries = Object.values(snap.val())
       .filter(e => e && e.name)
       .sort((a,b) => (b.score||0)-(a.score||0))
-      .slice(0, 50);
+      .slice(0, 100);
     if (!entries.length) { list.innerHTML='<div class="lb-empty">Noch keine Einträge.</div>'; return; }
     const rankClass = i => i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const rankIcon  = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
