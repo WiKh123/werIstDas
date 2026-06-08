@@ -373,8 +373,8 @@ function handleRoom(room) {
     if(isHost&&room.guesses) hostProcessGuesses(room);
     if(isHost&&room.skipVotes) {
       const votes=Object.keys(room.skipVotes).length;
-      const total=Object.keys(players||{}).length;
-      if(votes>=total) hostEndRound();
+      const needVote=Object.values(players||{}).filter(p=>!p.hasGuessed).length;
+      if(needVote===0||votes>=needVote) hostEndRound();
     }
     return;
   }
@@ -464,8 +464,8 @@ function updateSkipButton(room) {
   const btn=document.getElementById('btn-skip');
   if(!btn) return;
   const votes=room.skipVotes ? Object.keys(room.skipVotes).length : 0;
-  const total=room.players ? Object.keys(room.players).length : 1;
-  btn.textContent=`Aufgeben (${votes}/${total})`;
+  const needVote=Object.values(room.players||{}).filter(p=>!p.hasGuessed).length || 1;
+  btn.textContent=`Aufgeben (${votes}/${needVote})`;
   btn.disabled=hasSkippedThisRound;
 }
 
