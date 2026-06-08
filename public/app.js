@@ -8,6 +8,18 @@ const CATEGORY_META = [
   { id: 'geschichte', label: 'Geschichte',        icon: '📚' },
 ];
 
+// ── Country metadata ─────────────────────────────────────────────────────────
+const COUNTRY_META = [
+  { id: 'de',   label: 'Deutschland',     icon: '🇩🇪' },
+  { id: 'us',   label: 'USA',             icon: '🇺🇸' },
+  { id: 'uk',   label: 'Großbritannien',  icon: '🇬🇧' },
+  { id: 'fr',   label: 'Frankreich',      icon: '🇫🇷' },
+  { id: 'it',   label: 'Italien',         icon: '🇮🇹' },
+  { id: 'es',   label: 'Spanien',         icon: '🇪🇸' },
+  { id: 'at',   label: 'Österreich',      icon: '🇦🇹' },
+  { id: 'intl', label: 'International',    icon: '🌍' },
+];
+
 // ── State ──────────────────────────────────────────────────────────────────
 let db, auth;
 let uid = null;
@@ -58,18 +70,34 @@ function preloadAllImages(pool) {
 function getPool(room) {
   const p = room && room.personPool;
   const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
+  let result = base;
+  // Filter by category
   const cats = room && room.selectedCategories;
-  if (!cats) return base;
-  const catArr = Array.isArray(cats) ? cats : Object.values(cats);
-  if (!catArr.length) return base;
-  const catSet = new Set(catArr);
-  return base.filter(person => !person.category || catSet.has(person.category));
+  const catArr = cats ? (Array.isArray(cats) ? cats : Object.values(cats)) : null;
+  if (catArr && catArr.length) {
+    const catSet = new Set(catArr);
+    result = result.filter(person => !person.category || catSet.has(person.category));
+  }
+  // Filter by country (intersection)
+  const ctrs = room && room.selectedCountries;
+  const ctrArr = ctrs ? (Array.isArray(ctrs) ? ctrs : Object.values(ctrs)) : null;
+  if (ctrArr && ctrArr.length) {
+    const ctrSet = new Set(ctrArr);
+    result = result.filter(person => !person.country || ctrSet.has(person.country));
+  }
+  return result;
 }
 
 function getSelectedCats(room) {
   const cats = room && room.selectedCategories;
   if (!cats) return CATEGORY_META.map(c => c.id);
   return Array.isArray(cats) ? [...cats] : Object.values(cats);
+}
+
+function getSelectedCountries(room) {
+  const ctrs = room && room.selectedCountries;
+  if (!ctrs) return COUNTRY_META.map(c => c.id);
+  return Array.isArray(ctrs) ? [...ctrs] : Object.values(ctrs);
 }
 
 async function toggleCategory(catId) {
@@ -85,18 +113,52 @@ async function toggleCategory(catId) {
   await db.ref(`rooms/${roomCode}/selectedCategories`).set(cats);
 }
 
+async function toggleCountry(ctrId) {
+  if (!isHost || !currentRoomSnapshot) return;
+  const ctrs = getSelectedCountries(currentRoomSnapshot);
+  const idx = ctrs.indexOf(ctrId);
+  if (idx >= 0) {
+    if (ctrs.length <= 1) return;
+    ctrs.splice(idx, 1);
+  } else {
+    ctrs.push(ctrId);
+  }
+  await db.ref(`rooms/${roomCode}/selectedCountries`).set(ctrs);
+}
+
 function renderCategoryChips(room) {
   const container = document.getElementById('category-chips');
+  if (container) {
+    const p = room && room.personPool;
+    const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
+    const selCtr = new Set(getSelectedCountries(room));
+    const selectedSet = new Set(getSelectedCats(room));
+    const onlyOne = selectedSet.size === 1;
+    container.innerHTML = CATEGORY_META.map(cat => {
+      const active = selectedSet.has(cat.id);
+      const cantDeselect = active && onlyOne;
+      // count = persons in this category that also match selected countries
+      const count = base.filter(pr => pr.category === cat.id && (!pr.country || selCtr.has(pr.country))).length;
+      return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
+    }).join('');
+  }
+  renderCountryChips(room);
+}
+
+function renderCountryChips(room) {
+  const container = document.getElementById('country-chips');
   if (!container) return;
   const p = room && room.personPool;
   const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
-  const selectedSet = new Set(getSelectedCats(room));
+  const selCat = new Set(getSelectedCats(room));
+  const selectedSet = new Set(getSelectedCountries(room));
   const onlyOne = selectedSet.size === 1;
-  container.innerHTML = CATEGORY_META.map(cat => {
-    const active = selectedSet.has(cat.id);
+  container.innerHTML = COUNTRY_META.map(ctr => {
+    const active = selectedSet.has(ctr.id);
     const cantDeselect = active && onlyOne;
-    const count = base.filter(pr => pr.category === cat.id).length;
-    return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
+    // count = persons of this country that also match selected categories
+    const count = base.filter(pr => pr.country === ctr.id && (!pr.category || selCat.has(pr.category))).length;
+    return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCountry('${ctr.id}')" ${cantDeselect ? 'disabled' : ''}>${ctr.icon} ${ctr.label}<span class="cat-chip-count">${count}</span></button>`;
   }).join('');
 }
 
@@ -286,11 +348,12 @@ function pickSuggestion(i) {
 // ── Room Operations ───────────────────────────────────────────────────────
 async function createRoom(name) {
   const code=genCode();
-  const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||'',category:p.category||''}));
+  const defaultPool=PERSONS.map(p=>({name:p.name,aliases:p.aliases||[],wikiTitle:p.wikiTitle,info:p.info||'',category:p.category||'',country:p.country||''}));
   await db.ref(`rooms/${code}`).set({
     host:uid, state:'lobby',
     personPool:defaultPool,
     selectedCategories: CATEGORY_META.map(c => c.id),
+    selectedCountries: COUNTRY_META.map(c => c.id),
     rounds:null, totalRounds:null, currentRound:-1,
     timeLeft:30, roundResult:null, currentImageUrl:'',
     players:{[uid]:{name,score:0,hasGuessed:false}},
@@ -558,7 +621,7 @@ async function hostStartGame() {
     const room=currentRoomSnapshot;
     if(!room) throw new Error('Raum nicht geladen. Bitte Seite neu laden.');
     const pool=getPool(room);
-    if(!pool.length) throw new Error('Keine Personen in den gewählten Kategorien.');
+    if(!pool.length) throw new Error('Keine Personen in dieser Kombination aus Kategorien und Ländern. Bitte mehr auswählen.');
     const allIndices=shuffle(pool.map((_,i)=>i));
     const rounds=allIndices.slice(0,Math.min(roundsCount,pool.length));
     const resets={};
