@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Wer ist das?</title>
-  <link rel="stylesheet" href="style.css?v=20260607k">
+  <link rel="stylesheet" href="style.css?v=20260607l">
 </head>
 <body>
 
@@ -24,6 +24,19 @@
         <button id="btn-join" class="btn secondary">Beitreten</button>
       </div>
       <p id="join-error" class="error hidden"></p>
+      <button id="btn-show-leaderboard" class="btn-text-link" style="margin-top:.75rem">🏆 Allzeit-Rangliste</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="card">
+      <div class="pool-header">
+        <button id="btn-leaderboard-back" class="pool-back-btn">← Zurück</button>
+        <h2>🏆 Allzeit-Rangliste</h2>
+        <span></span>
+      </div>
+      <div id="leaderboard-list" class="leaderboard-list"></div>
     </div>
   </div>
 
@@ -140,8 +153,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js?v=20260607k"></script>
-  <script src="persons.js?v=20260607k"></script>
-  <script src="app.js?v=20260607k"></script>
+  <script src="firebase-config.js?v=20260607l"></script>
+  <script src="persons.js?v=20260607l"></script>
+  <script src="app.js?v=20260607l"></script>
 </body>
 </html>

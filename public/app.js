@@ -402,6 +402,7 @@ function handleRoom(room) {
     lastRoomState='finished';
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
     renderScores(players,'final-scores');
+    updateLeaderboard(players);
     showScreen('end');
   }
 }
@@ -610,6 +611,53 @@ async function hostNextRound() {
   }
 }
 
+// ── Leaderboard ───────────────────────────────────────────────────────────
+async function updateLeaderboard(players) {
+  if (!uid || !players || !players[uid]) return;
+  const myScore = players[uid].score || 0;
+  const scores = Object.values(players).map(p => p.score || 0);
+  const maxScore = Math.max(...scores);
+  const isWinner = myScore > 0 && myScore === maxScore;
+  try {
+    const ref = db.ref(`leaderboard/${uid}`);
+    const snap = await ref.get();
+    const cur = snap.val() || {totalScore:0, gamesPlayed:0, wins:0};
+    await ref.set({
+      name: myName || players[uid].name || 'Unbekannt',
+      totalScore: (cur.totalScore||0) + myScore,
+      gamesPlayed: (cur.gamesPlayed||0) + 1,
+      wins: (cur.wins||0) + (isWinner ? 1 : 0),
+      lastPlayed: Date.now(),
+    });
+  } catch(e) { console.warn('Leaderboard update failed:', e); }
+}
+
+async function showLeaderboard() {
+  showScreen('leaderboard');
+  const list = document.getElementById('leaderboard-list');
+  list.innerHTML = '<div class="lb-empty">Lädt…</div>';
+  try {
+    const snap = await db.ref('leaderboard').get();
+    if (!snap.exists()) { list.innerHTML='<div class="lb-empty">Noch keine Einträge.</div>'; return; }
+    const entries = Object.values(snap.val())
+      .filter(e => e && e.name)
+      .sort((a,b) => (b.totalScore||0)-(a.totalScore||0))
+      .slice(0, 50);
+    if (!entries.length) { list.innerHTML='<div class="lb-empty">Noch keine Einträge.</div>'; return; }
+    const rankClass = i => i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    const rankIcon  = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+    list.innerHTML = entries.map((e,i) => `
+      <div class="lb-row">
+        <span class="lb-rank ${rankClass(i)}">${rankIcon(i)}</span>
+        <span class="lb-name">${esc(e.name)}</span>
+        <div class="lb-stats">
+          <div class="lb-score">${e.totalScore||0} Pkt.</div>
+          <div class="lb-meta">${e.gamesPlayed||0} Spiele · ${e.wins||0} Siege</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { list.innerHTML='<div class="lb-empty">Fehler beim Laden.</div>'; }
+}
+
 // ── Error helpers ──────────────────────────────────────────────────────────
 function showJoinError(msg){const el=document.getElementById('join-error');el.textContent=msg;el.classList.remove('hidden');}
 function clearJoinError(){document.getElementById('join-error').classList.add('hidden');}
@@ -655,6 +703,8 @@ window.addEventListener('DOMContentLoaded', async()=>{
   guessInput.addEventListener('input',updateSuggestions);
   guessInput.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSuggestions();doGuess();}});
   document.getElementById('btn-next').onclick=hostNextRound;
+  document.getElementById('btn-show-leaderboard').onclick=showLeaderboard;
+  document.getElementById('btn-leaderboard-back').onclick=()=>showScreen('join');
   document.getElementById('btn-play-again').onclick=()=>{
     if(roomRef){roomRef.off();roomRef=null;}
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}

@@ -3,6 +3,10 @@
     "rooms": {
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "leaderboard": {
+      ".read": "auth != null",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
     }
   }
 }
