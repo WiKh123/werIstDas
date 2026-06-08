@@ -545,6 +545,7 @@ function startRoundUI(room) {
   updateSkipButton(room);
   if(isHost) startHostTimer();
   showScreen('game');
+  setTimeout(()=>{ const gi=document.getElementById('guess-input'); if(gi&&!gi.disabled) gi.focus(); },100);
 }
 
 function updateSkipButton(room) {
@@ -782,6 +783,15 @@ window.addEventListener('DOMContentLoaded', async()=>{
   guessInput.addEventListener('input',updateSuggestions);
   guessInput.addEventListener('keydown',e=>{if(e.key==='Enter'){if(currentSuggestions.length>0){pickSuggestion(0);}else{hideSuggestions();doGuess();}}});
   document.getElementById('btn-next').onclick=hostNextRound;
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter') return;
+    if(!document.getElementById('screen-round-end').classList.contains('active')) return;
+    const hostNext=document.getElementById('host-next');
+    if(hostNext&&!hostNext.classList.contains('hidden')){
+      const btn=document.getElementById('btn-next');
+      if(btn&&!btn.disabled) btn.click();
+    }
+  });
   document.getElementById('btn-show-leaderboard').onclick=showLeaderboard;
   document.getElementById('btn-leaderboard-back').onclick=()=>showScreen('join');
   document.getElementById('btn-play-again').onclick=()=>{

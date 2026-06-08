@@ -1,6 +1,6 @@
 const PERSONS = [
 
-  // ── Politik (62) ──
+  // ── Politik (65) ──
   { name: "Angela Merkel", category: "politik", country: "de", aliases: ["Merkel"], wikiTitle: "Angela_Merkel", info: "Bundeskanzlerin Deutschlands (2005–2021)" },
   { name: "Olaf Scholz", category: "politik", country: "de", aliases: ["Scholz"], wikiTitle: "Olaf_Scholz", info: "Bundeskanzler Deutschlands (2021–2025)" },
   { name: "Friedrich Merz", category: "politik", country: "de", aliases: ["Merz"], wikiTitle: "Friedrich_Merz", info: "CDU-Vorsitzender und Bundeskanzler (seit 2025)" },
@@ -63,8 +63,11 @@ const PERSONS = [
   { name: "Sebastian Kurz", category: "politik", country: "at", aliases: ["Kurz"], wikiTitle: "Sebastian_Kurz", info: "Ehem. Bundeskanzler Österreichs" },
   { name: "Karl Nehammer", category: "politik", country: "at", aliases: ["Nehammer"], wikiTitle: "Karl_Nehammer", info: "Bundeskanzler Österreichs (2021–2025)" },
   { name: "Mette Frederiksen", category: "politik", country: "intl", aliases: ["Frederiksen"], wikiTitle: "Mette_Frederiksen", info: "Ministerpräsidentin Dänemarks" },
+  { name: "Wolfgang Schäuble", category: "politik", country: "de", aliases: ["Schäuble","Schaeuble"], wikiTitle: "Wolfgang_Schäuble", info: "CDU-Politiker, langjähriger Bundestagspräsident (1942–2023)" },
+  { name: "Horst Seehofer", category: "politik", country: "de", aliases: ["Seehofer"], wikiTitle: "Horst_Seehofer", info: "CSU-Politiker, ehem. Bundesinnenminister und Ministerpräsident" },
+  { name: "Erich Honecker", category: "politik", country: "de", aliases: ["Honecker"], wikiTitle: "Erich_Honecker", info: "SED-Generalsekretär der DDR (1971–1989)" },
 
-  // ── Wirtschaft & Tech (42) ──
+  // ── Wirtschaft & Tech (44) ──
   { name: "Elon Musk", category: "wirtschaft", country: "us", aliases: ["Musk"], wikiTitle: "Elon_Musk", info: "CEO von Tesla und SpaceX" },
   { name: "Bill Gates", category: "wirtschaft", country: "us", aliases: ["Gates"], wikiTitle: "Bill_Gates", info: "Mitgründer von Microsoft" },
   { name: "Mark Zuckerberg", category: "wirtschaft", country: "us", aliases: ["Zuckerberg","Zuck"], wikiTitle: "Mark_Zuckerberg", info: "CEO von Meta (Facebook)" },
@@ -107,8 +110,10 @@ const PERSONS = [
   { name: "Demis Hassabis", category: "wirtschaft", country: "uk", aliases: ["Hassabis"], wikiTitle: "Demis_Hassabis", info: "Mitgründer von DeepMind" },
   { name: "Lip-Bu Tan", category: "wirtschaft", country: "us", aliases: ["Tan"], wikiTitle: "Lip-Bu_Tan", info: "CEO von Intel" },
   { name: "Lisa Su", category: "wirtschaft", country: "us", aliases: ["Su"], wikiTitle: "Lisa_Su", info: "CEO von AMD" },
+  { name: "Hasso Plattner", category: "wirtschaft", country: "de", aliases: ["Plattner"], wikiTitle: "Hasso_Plattner", info: "SAP-Mitgründer und Milliardär" },
+  { name: "Theo Albrecht", category: "wirtschaft", country: "de", aliases: ["Albrecht"], wikiTitle: "Theo_Albrecht", info: "Aldi-Nord-Mitgründer (1922–2010)" },
 
-  // ── Sport (66) ──
+  // ── Sport (73) ──
   { name: "Cristiano Ronaldo", category: "sport", country: "intl", aliases: ["Ronaldo","CR7"], wikiTitle: "Cristiano_Ronaldo", info: "Portugiesischer Fußballstar" },
   { name: "Lionel Messi", category: "sport", country: "intl", aliases: ["Messi"], wikiTitle: "Lionel_Messi", info: "Argentinischer Fußballstar" },
   { name: "Kylian Mbappé", category: "sport", country: "fr", aliases: ["Mbappe","Mbappé"], wikiTitle: "Kylian_Mbappé", info: "Französischer Fußballstar" },
@@ -175,8 +180,15 @@ const PERSONS = [
   { name: "Magic Johnson", category: "sport", country: "us", aliases: ["Magic","Johnson"], wikiTitle: "Magic_Johnson", info: "US-amerikanische Basketball-Legende" },
   { name: "Cathy Freeman", category: "sport", country: "intl", aliases: ["Freeman"], wikiTitle: "Cathy_Freeman", info: "Australische Sprinterin, Olympiasiegerin 2000" },
   { name: "Katarina Witt", category: "sport", country: "de", aliases: ["Witt"], wikiTitle: "Katarina_Witt", info: "Deutsche Eiskunstlauf-Olympiasiegerin" },
+  { name: "Nico Rosberg", category: "sport", country: "de", aliases: ["Rosberg"], wikiTitle: "Nico_Rosberg", info: "Deutscher Formel-1-Weltmeister 2016" },
+  { name: "Florian Wirtz", category: "sport", country: "de", aliases: ["Wirtz"], wikiTitle: "Florian_Wirtz", info: "Deutscher Fußball-Nationalspieler (Bayer Leverkusen)" },
+  { name: "Jamal Musiala", category: "sport", country: "de", aliases: ["Musiala"], wikiTitle: "Jamal_Musiala", info: "Deutscher Fußball-Nationalspieler (Bayern München)" },
+  { name: "Joshua Kimmich", category: "sport", country: "de", aliases: ["Kimmich"], wikiTitle: "Joshua_Kimmich", info: "Deutscher Fußball-Nationalspieler (Bayern München)" },
+  { name: "Lukas Podolski", category: "sport", country: "de", aliases: ["Podolski","Poldi"], wikiTitle: "Lukas_Podolski", info: "Deutscher Fußball-Weltmeister 2014, 'Prinz Poldi'" },
+  { name: "Joachim Löw", category: "sport", country: "de", aliases: ["Löw","Jogi Löw","Jogi"], wikiTitle: "Joachim_Löw", info: "Ehem. Bundestrainer der deutschen Nationalmannschaft (2004–2021)" },
+  { name: "Magdalena Neuner", category: "sport", country: "de", aliases: ["Neuner"], wikiTitle: "Magdalena_Neuner", info: "Deutsche Biathlon-Weltmeisterin und Olympiasiegerin" },
 
-  // ── Musik (54) ──
+  // ── Musik (59) ──
   { name: "Taylor Swift", category: "musik", country: "us", aliases: ["Swift"], wikiTitle: "Taylor_Swift", info: "US-amerikanische Sängerin und Songwriterin" },
   { name: "Michael Jackson", category: "musik", country: "us", aliases: ["Jackson","King of Pop"], wikiTitle: "Michael_Jackson", info: "US-amerikanischer Popstar (1958–2009)" },
   { name: "Beyoncé", category: "musik", country: "us", aliases: ["Beyonce"], wikiTitle: "Beyoncé", info: "US-amerikanische Sängerin und Entertainerin" },
@@ -229,10 +241,15 @@ const PERSONS = [
   { name: "Udo Lindenberg", category: "musik", country: "de", aliases: ["Lindenberg"], wikiTitle: "Udo_Lindenberg", info: "Deutsche Rock-Legende" },
   { name: "Nena", category: "musik", country: "de", aliases: ["99 Luftballons"], wikiTitle: "Nena", info: "Deutsche Sängerin (99 Luftballons)" },
   { name: "Rammstein", category: "musik", country: "de", aliases: ["Till Lindemann"], wikiTitle: "Till_Lindemann", info: "Frontmann von Rammstein" },
+  { name: "Peter Maffay", category: "musik", country: "de", aliases: ["Maffay"], wikiTitle: "Peter_Maffay", info: "Deutscher Rockmusiker, bekannt für Tabaluga" },
+  { name: "Dieter Bohlen", category: "musik", country: "de", aliases: ["Bohlen"], wikiTitle: "Dieter_Bohlen", info: "Musiker (Modern Talking) und DSDS-Juror" },
+  { name: "Campino", category: "musik", country: "de", aliases: ["Die Toten Hosen"], wikiTitle: "Campino", info: "Frontmann von Die Toten Hosen" },
+  { name: "Sarah Connor", category: "musik", country: "de", aliases: ["Connor"], wikiTitle: "Sarah_Connor_(singer)", info: "Deutsche Pop- und R&B-Sängerin" },
+  { name: "Marlene Dietrich", category: "musik", country: "de", aliases: ["Dietrich"], wikiTitle: "Marlene_Dietrich", info: "Deutsche Sängerin und Schauspielerin (1901–1992)" },
   { name: "Andrea Bocelli", category: "musik", country: "it", aliases: ["Bocelli"], wikiTitle: "Andrea_Bocelli", info: "Italienischer Tenor" },
   { name: "Luciano Pavarotti", category: "musik", country: "it", aliases: ["Pavarotti"], wikiTitle: "Luciano_Pavarotti", info: "Italienischer Operntenor (1935–2007)" },
 
-  // ── Film & TV (55) ──
+  // ── Film & TV (59) ──
   { name: "Keanu Reeves", category: "film", country: "intl", aliases: ["Reeves","Keanu"], wikiTitle: "Keanu_Reeves", info: "Kanadischer Schauspieler (Matrix, John Wick)" },
   { name: "Leonardo DiCaprio", category: "film", country: "us", aliases: ["DiCaprio","Leo"], wikiTitle: "Leonardo_DiCaprio", info: "US-amerikanischer Schauspieler" },
   { name: "Oprah Winfrey", category: "film", country: "us", aliases: ["Oprah","Winfrey"], wikiTitle: "Oprah_Winfrey", info: "US-amerikanische Talkshow-Moderatorin" },
@@ -287,9 +304,13 @@ const PERSONS = [
   { name: "Til Schweiger", category: "film", country: "de", aliases: ["Schweiger"], wikiTitle: "Til_Schweiger", info: "Deutscher Schauspieler und Regisseur" },
   { name: "Daniel Brühl", category: "film", country: "de", aliases: ["Brühl","Bruehl"], wikiTitle: "Daniel_Brühl", info: "Deutsch-spanischer Schauspieler" },
   { name: "Diane Kruger", category: "film", country: "de", aliases: ["Kruger"], wikiTitle: "Diane_Kruger", info: "Deutsche Schauspielerin" },
+  { name: "Moritz Bleibtreu", category: "film", country: "de", aliases: ["Bleibtreu"], wikiTitle: "Moritz_Bleibtreu", info: "Deutscher Schauspieler (Lola rennt, Das Experiment)" },
+  { name: "Franka Potente", category: "film", country: "de", aliases: ["Potente"], wikiTitle: "Franka_Potente", info: "Deutsche Schauspielerin (Lola rennt, Bourne Identity)" },
+  { name: "Werner Herzog", category: "film", country: "de", aliases: ["Herzog"], wikiTitle: "Werner_Herzog", info: "Deutscher Filmregisseur (Fitzcarraldo, Aguirre)" },
+  { name: "Matthias Schweighöfer", category: "film", country: "de", aliases: ["Schweighöfer","Schweighoefer"], wikiTitle: "Matthias_Schweighöfer", info: "Deutscher Schauspieler und Regisseur" },
   { name: "Christoph Waltz", category: "film", country: "at", aliases: ["Waltz"], wikiTitle: "Christoph_Waltz", info: "Österreichischer Schauspieler, 2 Oscars" },
 
-  // ── Geschichte & Wissenschaft (52) ──
+  // ── Geschichte & Wissenschaft (56) ──
   { name: "Albert Einstein", category: "geschichte", country: "de", aliases: ["Einstein"], wikiTitle: "Albert_Einstein", info: "Physiker, Relativitätstheorie (1879–1955)" },
   { name: "Nelson Mandela", category: "geschichte", country: "intl", aliases: ["Mandela"], wikiTitle: "Nelson_Mandela", info: "Südafrikanischer Freiheitskämpfer und Präsident (1918–2013)" },
   { name: "Willy Brandt", category: "geschichte", country: "de", aliases: ["Brandt"], wikiTitle: "Willy_Brandt", info: "Bundeskanzler Deutschlands (1969–1974)" },
@@ -341,6 +362,10 @@ const PERSONS = [
   { name: "Carl Friedrich Gauß", category: "geschichte", country: "de", aliases: ["Gauß","Gauss"], wikiTitle: "Carl_Friedrich_Gauss", info: "Deutscher Mathematiker (1777–1855)" },
   { name: "Immanuel Kant", category: "geschichte", country: "de", aliases: ["Kant"], wikiTitle: "Immanuel_Kant", info: "Deutscher Philosoph der Aufklärung (1724–1804)" },
   { name: "Friedrich Nietzsche", category: "geschichte", country: "de", aliases: ["Nietzsche"], wikiTitle: "Friedrich_Nietzsche", info: "Deutscher Philosoph (1844–1900)" },
+  { name: "Sophie Scholl", category: "geschichte", country: "de", aliases: ["Scholl"], wikiTitle: "Sophie_Scholl", info: "Widerstandskämpferin gegen den Nationalsozialismus (1921–1943)" },
+  { name: "Max Planck", category: "geschichte", country: "de", aliases: ["Planck"], wikiTitle: "Max_Planck", info: "Physiker, Begründer der Quantenphysik (1858–1947)" },
+  { name: "Richard Wagner", category: "geschichte", country: "de", aliases: ["Wagner"], wikiTitle: "Richard_Wagner", info: "Deutscher Komponist und Opernreformator (1813–1883)" },
+  { name: "Robert Koch", category: "geschichte", country: "de", aliases: ["Koch"], wikiTitle: "Robert_Koch", info: "Bakteriologe, Entdecker des Tuberkuloseerregers (1843–1910)" },
   { name: "Konfuzius", category: "geschichte", country: "intl", aliases: ["Confucius"], wikiTitle: "Confucius", info: "Chinesischer Philosoph (551–479 v. Chr.)" },
 
   // ── Fiktive Charaktere (18) – nur Animations-/Comicfiguren & Gaming-Charaktere, keine echten Schauspieler ──
