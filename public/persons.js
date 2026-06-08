@@ -343,7 +343,7 @@ const PERSONS = [
   { name: "Friedrich Nietzsche", category: "geschichte", country: "de", aliases: ["Nietzsche"], wikiTitle: "Friedrich_Nietzsche", info: "Deutscher Philosoph (1844–1900)" },
   { name: "Konfuzius", category: "geschichte", country: "intl", aliases: ["Confucius"], wikiTitle: "Confucius", info: "Chinesischer Philosoph (551–479 v. Chr.)" },
 
-  // ── Fiktive Charaktere (24) – nur Animations-/Comicfiguren & Gaming-Charaktere, keine echten Schauspieler ──
+  // ── Fiktive Charaktere (18) – nur Animations-/Comicfiguren & Gaming-Charaktere, keine echten Schauspieler ──
   { name: "Mickey Mouse", category: "fiktion", country: "us", aliases: ["Micky Maus","Mickey"], wikiTitle: "Mickey_Mouse", info: "Walt Disneys bekannteste Zeichentrickfigur" },
   { name: "Donald Duck", category: "fiktion", country: "us", aliases: ["Donald","Dagobert Duck"], wikiTitle: "Donald_Duck", info: "Aufbrausender Enterich aus Walt Disneys Zeichentrickwelt" },
   { name: "Homer Simpson", category: "fiktion", country: "us", aliases: ["Homer"], wikiTitle: "Homer_Simpson", info: "Tollpatschiger Vater der Familie Simpson aus Springfield" },
@@ -353,16 +353,10 @@ const PERSONS = [
   { name: "Darth Vader", category: "fiktion", country: "us", aliases: ["Anakin Skywalker","Vader"], wikiTitle: "Darth_Vader", info: "Ikonischer Schurke aus Star Wars – stets im schwarzen Rüstungsanzug" },
   { name: "Woody", category: "fiktion", country: "us", aliases: ["Woody Pride","Sheriff Woody"], wikiTitle: "Woody_(Toy_Story)", info: "Cowboy-Puppe aus dem Pixar-Film Toy Story" },
   { name: "Buzz Lightyear", category: "fiktion", country: "us", aliases: ["Buzz"], wikiTitle: "Buzz_Lightyear", info: "Weltraumranger-Spielzeug aus dem Pixar-Film Toy Story" },
-  { name: "Asterix", category: "fiktion", country: "fr", aliases: [], wikiTitle: "Asterix", info: "Unerschrockener gallischer Krieger aus René Goscinnys Comicserie" },
   { name: "Obelix", category: "fiktion", country: "fr", aliases: [], wikiTitle: "Obelix", info: "Bester Freund von Asterix, bekannt für seinen Appetit auf Wildschweine" },
-  { name: "Tintin", category: "fiktion", country: "intl", aliases: ["Tim","Tim und Struppi"], wikiTitle: "Tintin_(character)", info: "Junger belgischer Reporter und Weltentdecker (Tim und Struppi)" },
-  { name: "Lucky Luke", category: "fiktion", country: "intl", aliases: [], wikiTitle: "Lucky_Luke", info: "Cowboy, der schneller schießt als sein Schatten (belgischer Comic)" },
-  { name: "Pinocchio", category: "fiktion", country: "it", aliases: [], wikiTitle: "Pinocchio", info: "Hölzerne Puppe, die ein Mensch werden will (Carlo Collodi)" },
-  { name: "Pumuckl", category: "fiktion", country: "de", aliases: [], wikiTitle: "Pumuckl", info: "Rotblonder Kobold aus der deutschen Kinderserie" },
   { name: "Winnie Puuh", category: "fiktion", country: "uk", aliases: ["Winnie the Pooh","Puuh","Pooh"], wikiTitle: "Winnie-the-Pooh", info: "Honig-liebender Teddybär aus A. A. Milnes Kindergeschichten" },
   // Gaming
   { name: "Super Mario", category: "fiktion", country: "intl", aliases: ["Mario"], wikiTitle: "Mario_(character)", info: "Nintendos Maskottchen – der rote Klempner aus dem Pilzkönigreich" },
-  { name: "Luigi", category: "fiktion", country: "intl", aliases: [], wikiTitle: "Luigi", info: "Marios grün gekleideter Bruder (Nintendo)" },
   { name: "Pikachu", category: "fiktion", country: "intl", aliases: [], wikiTitle: "Pikachu", info: "Elektrisches Maus-Pokémon und Maskottchen der Pokémon-Reihe" },
   { name: "Sonic the Hedgehog", category: "fiktion", country: "intl", aliases: ["Sonic","Sonic der Igel"], wikiTitle: "Sonic_the_Hedgehog_(character)", info: "Blauer Supersonic-Igel aus Segas Videospielreihe" },
   { name: "Link", category: "fiktion", country: "intl", aliases: ["Link (Zelda)"], wikiTitle: "Link_(The_Legend_of_Zelda)", info: "Schwertkämpfer und Held aus Nintendos Zelda-Reihe" },
