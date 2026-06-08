@@ -9,6 +9,27 @@ const CATEGORY_META = [
   { id: 'fiktion',    label: 'Fiktive Charaktere',   icon: '🧙' },
 ];
 
+const LS_CATS = 'wid_cats';
+const LS_CTRS = 'wid_ctrs';
+
+function loadStoredCats() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_CATS) || 'null');
+    if (!Array.isArray(stored)) return CATEGORY_META.map(c => c.id);
+    const valid = stored.filter(id => CATEGORY_META.some(c => c.id === id));
+    return valid.length ? valid : CATEGORY_META.map(c => c.id);
+  } catch { return CATEGORY_META.map(c => c.id); }
+}
+
+function loadStoredCtrs() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_CTRS) || 'null');
+    if (!Array.isArray(stored)) return COUNTRY_META.map(c => c.id);
+    const valid = stored.filter(id => COUNTRY_META.some(c => c.id === id));
+    return valid.length ? valid : COUNTRY_META.map(c => c.id);
+  } catch { return COUNTRY_META.map(c => c.id); }
+}
+
 // ── Country metadata ─────────────────────────────────────────────────────────
 const COUNTRY_META = [
   { id: 'de',   label: 'Deutschland',     icon: '🇩🇪' },
@@ -112,6 +133,7 @@ async function toggleCategory(catId) {
     cats.push(catId);
   }
   await db.ref(`rooms/${roomCode}/selectedCategories`).set(cats);
+  try { localStorage.setItem(LS_CATS, JSON.stringify(cats)); } catch {}
 }
 
 async function toggleCountry(ctrId) {
@@ -125,6 +147,7 @@ async function toggleCountry(ctrId) {
     ctrs.push(ctrId);
   }
   await db.ref(`rooms/${roomCode}/selectedCountries`).set(ctrs);
+  try { localStorage.setItem(LS_CTRS, JSON.stringify(ctrs)); } catch {}
 }
 
 function renderCategoryChips(room) {
@@ -353,8 +376,8 @@ async function createRoom(name) {
   await db.ref(`rooms/${code}`).set({
     host:uid, state:'lobby',
     personPool:defaultPool,
-    selectedCategories: CATEGORY_META.map(c => c.id),
-    selectedCountries: COUNTRY_META.map(c => c.id),
+    selectedCategories: loadStoredCats(),
+    selectedCountries: loadStoredCtrs(),
     rounds:null, totalRounds:null, currentRound:-1,
     timeLeft:30, roundResult:null, currentImageUrl:'',
     players:{[uid]:{name,score:0,hasGuessed:false}},
