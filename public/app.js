@@ -615,19 +615,14 @@ async function hostNextRound() {
 async function updateLeaderboard(players) {
   if (!uid || !players || !players[uid]) return;
   const myScore = players[uid].score || 0;
-  const scores = Object.values(players).map(p => p.score || 0);
-  const maxScore = Math.max(...scores);
-  const isWinner = myScore > 0 && myScore === maxScore;
+  if (myScore <= 0) return;
   try {
     const ref = db.ref(`leaderboard/${uid}`);
     const snap = await ref.get();
-    const cur = snap.val() || {totalScore:0, gamesPlayed:0, wins:0};
+    const cur = snap.val() || {score:0};
     await ref.set({
       name: myName || players[uid].name || 'Unbekannt',
-      totalScore: (cur.totalScore||0) + myScore,
-      gamesPlayed: (cur.gamesPlayed||0) + 1,
-      wins: (cur.wins||0) + (isWinner ? 1 : 0),
-      lastPlayed: Date.now(),
+      score: (cur.score||0) + myScore,
     });
   } catch(e) { console.warn('Leaderboard update failed:', e); }
 }
@@ -641,7 +636,7 @@ async function showLeaderboard() {
     if (!snap.exists()) { list.innerHTML='<div class="lb-empty">Noch keine Einträge.</div>'; return; }
     const entries = Object.values(snap.val())
       .filter(e => e && e.name)
-      .sort((a,b) => (b.totalScore||0)-(a.totalScore||0))
+      .sort((a,b) => (b.score||0)-(a.score||0))
       .slice(0, 50);
     if (!entries.length) { list.innerHTML='<div class="lb-empty">Noch keine Einträge.</div>'; return; }
     const rankClass = i => i===0?'gold':i===1?'silver':i===2?'bronze':'';
@@ -650,10 +645,7 @@ async function showLeaderboard() {
       <div class="lb-row">
         <span class="lb-rank ${rankClass(i)}">${rankIcon(i)}</span>
         <span class="lb-name">${esc(e.name)}</span>
-        <div class="lb-stats">
-          <div class="lb-score">${e.totalScore||0} Pkt.</div>
-          <div class="lb-meta">${e.gamesPlayed||0} Spiele · ${e.wins||0} Siege</div>
-        </div>
+        <div class="lb-score">${e.score||0} Pkt.</div>
       </div>`).join('');
   } catch(e) { list.innerHTML='<div class="lb-empty">Fehler beim Laden.</div>'; }
 }
