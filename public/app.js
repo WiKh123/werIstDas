@@ -780,7 +780,7 @@ window.addEventListener('DOMContentLoaded', async()=>{
   document.getElementById('btn-guess').onclick=doGuess;
   const guessInput=document.getElementById('guess-input');
   guessInput.addEventListener('input',updateSuggestions);
-  guessInput.addEventListener('keydown',e=>{if(e.key==='Enter'){hideSuggestions();doGuess();}});
+  guessInput.addEventListener('keydown',e=>{if(e.key==='Enter'){if(currentSuggestions.length>0){pickSuggestion(0);}else{hideSuggestions();doGuess();}}});
   document.getElementById('btn-next').onclick=hostNextRound;
   document.getElementById('btn-show-leaderboard').onclick=showLeaderboard;
   document.getElementById('btn-leaderboard-back').onclick=()=>showScreen('join');
