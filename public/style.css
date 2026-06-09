@@ -146,6 +146,7 @@ input::placeholder { color:var(--muted); }
 .answer-reveal { display:flex; gap:1rem; align-items:center; background:var(--card2); border-radius:12px; padding:1rem; margin-bottom:1rem; }
 .answer-reveal img { width:80px; height:80px; object-fit:cover; border-radius:10px; flex-shrink:0; background:var(--border); }
 .reveal-info h3 { font-size:1.2rem; }
+.reveal-funfact { margin-top:.6rem; font-size:.85rem; line-height:1.45; opacity:.85; font-style:italic; }
 
 #screen-end .card { text-align:center; }
 #screen-end h1 { margin-bottom:1.5rem; }

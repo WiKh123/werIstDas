@@ -63,6 +63,7 @@ let currentRoomSnapshot = null;
 let currentSuggestions = [];
 const processedGuessUids = new Set();
 const imageUrlCache = {};
+const funFactCache = {};
 
 // ── Wikipedia Image Loader ─────────────────────────────────────────────────
 async function getImageUrl(person) {
@@ -83,6 +84,30 @@ async function getImageUrl(person) {
     }
     return src || null;
   } catch(e) { return null; }
+}
+
+// German Wikipedia lead extract, shown as fun fact on the reveal screen.
+// Keyed by display name (German), which usually matches the de.wiki title.
+async function getFunFact(person) {
+  const key = person && person.name;
+  if (!key) return '';
+  if (funFactCache[key] !== undefined) return funFactCache[key];
+  try {
+    const title = key.replace(/ /g, '_');
+    const url = 'https://de.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title);
+    const res = await fetch(url);
+    if (!res.ok) { funFactCache[key] = ''; return ''; }
+    const data = await res.json();
+    let text = (data && data.extract) || '';
+    // Trim to ~2 sentences / 280 chars so the reveal card stays compact
+    if (text.length > 280) {
+      const cut = text.slice(0, 280);
+      const lastDot = cut.lastIndexOf('. ');
+      text = lastDot > 80 ? cut.slice(0, lastDot + 1) : cut + '…';
+    }
+    funFactCache[key] = text;
+    return text;
+  } catch(e) { return ''; }
 }
 
 
@@ -497,10 +522,15 @@ function handleRoom(room) {
   if(state==='round_end'&&lastRoomState!=='round_end') {
     lastRoomState='round_end';
     if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
-    const {name,info,imageUrl,isLastRound}=roundResult;
+    const {name,info,funfact,imageUrl,isLastRound}=roundResult;
     document.getElementById('reveal-image').src=imageUrl||'';
     document.getElementById('reveal-name').textContent=name;
     document.getElementById('reveal-info-text').textContent=info||'';
+    const ff=document.getElementById('reveal-funfact');
+    if(ff){
+      if(funfact&&funfact!==info){ ff.textContent='💡 '+funfact; ff.classList.remove('hidden'); }
+      else ff.classList.add('hidden');
+    }
     renderScores(players,'round-scores');
     if(isHost){
       document.getElementById('btn-next').textContent=isLastRound?'Endergebnis 🏆':'Nächste Runde ▶';
@@ -658,9 +688,14 @@ async function hostEndRound() {
   const pool=getPool(room);
   const person=pool[rounds[currentRound]];
   const imageUrl=currentImageUrl||imageUrlCache[person.wikiTitle]||'';
+  // max 2.5s for the fun fact, then reveal without it
+  const funfact=await Promise.race([
+    getFunFact(person),
+    new Promise(r=>setTimeout(()=>r(''),2500)),
+  ]).catch(()=>'');
   await db.ref(`rooms/${roomCode}`).update({
     state:'round_end',
-    roundResult:{name:person.name,info:person.info||'',imageUrl,isLastRound:currentRound>=totalRounds-1},
+    roundResult:{name:person.name,info:person.info||'',funfact:funfact||'',imageUrl,isLastRound:currentRound>=totalRounds-1},
   });
 }
 
@@ -687,7 +722,8 @@ async function hostStartGame() {
       timeLeft:30, roundResult:null, guesses:null, skipVotes:null,
       currentImageUrl:firstImageUrl,
     });
-    rounds.slice(1, 4).forEach(idx=>{ if(pool[idx]) getImageUrl(pool[idx]); });
+    if(pool[rounds[0]]) getFunFact(pool[rounds[0]]);
+    rounds.slice(1, 4).forEach(idx=>{ if(pool[idx]){ getImageUrl(pool[idx]); getFunFact(pool[idx]); } });
   } catch(e) {
     console.error('Start fehlgeschlagen:', e);
     alert('Spiel konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
@@ -720,8 +756,9 @@ async function hostNextRound() {
       currentImageUrl:nextImageUrl,
     });
     // warm up the round after next so the host never waits on Wikipedia
+    if(nextPerson) getFunFact(nextPerson);
     const lookAhead = pool[room.rounds[nextRound+1]];
-    if(lookAhead) getImageUrl(lookAhead);
+    if(lookAhead){ getImageUrl(lookAhead); getFunFact(lookAhead); }
   } catch(e) {
     console.error('Nächste Runde fehlgeschlagen:', e);
     alert('Nächste Runde konnte nicht gestartet werden:\n'+(e&&e.message?e.message:String(e)));
