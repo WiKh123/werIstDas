@@ -201,7 +201,7 @@ const PERSONS = [
   { name: "Max Schmeling", category: "sport", country: "de", aliases: ["Schmeling"], wikiTitle: "Max_Schmeling", info: "Deutscher Boxweltmeister (1905–2005)" },
   { name: "Heike Drechsler", category: "sport", country: "de", aliases: ["Drechsler"], wikiTitle: "Heike_Drechsler", info: "Deutsche Weitsprung-Olympiasiegerin" },
 
-  // ── Musik (67) ──
+  // ── Musik (82) ──
   { name: "Taylor Swift", category: "musik", country: "us", aliases: ["Swift"], wikiTitle: "Taylor_Swift", info: "US-amerikanische Sängerin und Songwriterin" },
   { name: "Michael Jackson", category: "musik", country: "us", aliases: ["Jackson","King of Pop"], wikiTitle: "Michael_Jackson", info: "US-amerikanischer Popstar (1958–2009)" },
   { name: "Beyoncé", category: "musik", country: "us", aliases: ["Beyonce"], wikiTitle: "Beyoncé", info: "US-amerikanische Sängerin und Entertainerin" },
@@ -267,6 +267,21 @@ const PERSONS = [
   { name: "Richard Strauss", category: "musik", country: "de", aliases: ["Strauss"], wikiTitle: "Richard_Strauss", info: "Deutscher Komponist und Dirigent (1864–1949)" },
   { name: "Johannes Brahms", category: "musik", country: "de", aliases: ["Brahms"], wikiTitle: "Johannes_Brahms", info: "Deutscher Komponist der Romantik (1833–1897)" },
   { name: "Wolfgang Petry", category: "musik", country: "de", aliases: ["Petry"], wikiTitle: "Wolfgang_Petry", info: "Deutscher Schlagersänger" },
+  { name: "Marius Müller-Westernhagen", category: "musik", country: "de", aliases: ["Westernhagen","Marius"], wikiTitle: "Marius_Müller-Westernhagen", info: "Deutscher Rock-Sänger und Schauspieler" },
+  { name: "Klaus Meine", category: "musik", country: "de", aliases: ["Scorpions"], wikiTitle: "Klaus_Meine", info: "Sänger der Scorpions (Rock You Like a Hurricane)" },
+  { name: "Bill Kaulitz", category: "musik", country: "de", aliases: ["Kaulitz","Tokio Hotel"], wikiTitle: "Bill_Kaulitz", info: "Sänger von Tokio Hotel" },
+  { name: "Xavier Naidoo", category: "musik", country: "de", aliases: ["Naidoo","Xavier"], wikiTitle: "Xavier_Naidoo", info: "Deutsch-südafrikanischer R&B- und Soul-Sänger aus Mannheim" },
+  { name: "Clueso", category: "musik", country: "de", aliases: ["Thomas Hübner"], wikiTitle: "Clueso", info: "Deutscher Pop- und Rap-Künstler aus Erfurt" },
+  { name: "Peter Fox", category: "musik", country: "de", aliases: ["Seeed"], wikiTitle: "Peter_Fox_(musician)", info: "Frontmann von Seeed, bekannt für Stadtaffe" },
+  { name: "Adel Tawil", category: "musik", country: "de", aliases: ["Tawil","Ich + Ich"], wikiTitle: "Adel_Tawil", info: "Deutsch-tunesischer Sänger (Ich + Ich, Zuhause)" },
+  { name: "Shirin David", category: "musik", country: "de", aliases: ["Shirin"], wikiTitle: "Shirin_David", info: "Deutsche Sängerin, Rapperin und YouTube-Persönlichkeit" },
+  { name: "Capital Bra", category: "musik", country: "de", aliases: ["CapsBra","Capi"], wikiTitle: "Capital_Bra", info: "Einer der erfolgreichsten deutschen Rapper" },
+  { name: "Marteria", category: "musik", country: "de", aliases: ["Marten Laciny"], wikiTitle: "Marteria", info: "Deutscher Rapper und Produzent aus Rostock" },
+  { name: "Samy Deluxe", category: "musik", country: "de", aliases: ["SamyD","Samy"], wikiTitle: "Samy_Deluxe", info: "Hamburger Hip-Hop-Pionier" },
+  { name: "Heino", category: "musik", country: "de", aliases: [], wikiTitle: "Heino", info: "Deutscher Schlagersänger mit markanter Sonnenbrille" },
+  { name: "Clara Schumann", category: "musik", country: "de", aliases: ["Clara Wieck"], wikiTitle: "Clara_Schumann", info: "Deutsche Pianistin und Komponistin der Romantik (1819–1896)" },
+  { name: "Felix Mendelssohn", category: "musik", country: "de", aliases: ["Mendelssohn Bartholdy","Mendelssohn"], wikiTitle: "Felix_Mendelssohn", info: "Deutscher Komponist (Sommernachtstraum, Elias) (1809–1847)" },
+  { name: "Georg Friedrich Händel", category: "musik", country: "de", aliases: ["Händel","Handel","Haendel"], wikiTitle: "George_Frideric_Handel", info: "Deutsch-britischer Barock-Komponist (Messias) (1685–1759)" },
   { name: "Andrea Bocelli", category: "musik", country: "it", aliases: ["Bocelli"], wikiTitle: "Andrea_Bocelli", info: "Italienischer Tenor" },
   { name: "Luciano Pavarotti", category: "musik", country: "it", aliases: ["Pavarotti"], wikiTitle: "Luciano_Pavarotti", info: "Italienischer Operntenor (1935–2007)" },
 
