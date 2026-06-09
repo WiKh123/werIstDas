@@ -87,6 +87,10 @@ async function getImageUrl(person) {
 
 
 // ── Pool helpers ───────────────────────────────────────────────────────────
+const _personByName = new Map(PERSONS.map(p => [p.name, p]));
+function _resolveCountry(p)  { return p.country  || (_personByName.get(p.name) || {}).country  || ''; }
+function _resolveCategory(p) { return p.category || (_personByName.get(p.name) || {}).category || ''; }
+
 function getPool(room) {
   const p = room && room.personPool;
   const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
@@ -96,14 +100,14 @@ function getPool(room) {
   const catArr = cats ? (Array.isArray(cats) ? cats : Object.values(cats)) : null;
   if (catArr && catArr.length) {
     const catSet = new Set(catArr);
-    result = result.filter(person => !person.category || catSet.has(person.category));
+    result = result.filter(person => { const c = _resolveCategory(person); return !c || catSet.has(c); });
   }
   // Filter by country (intersection)
   const ctrs = room && room.selectedCountries;
   const ctrArr = ctrs ? (Array.isArray(ctrs) ? ctrs : Object.values(ctrs)) : null;
   if (ctrArr && ctrArr.length) {
     const ctrSet = new Set(ctrArr);
-    result = result.filter(person => !person.country || ctrSet.has(person.country));
+    result = result.filter(person => { const c = _resolveCountry(person); return !c || ctrSet.has(c); });
   }
   return result;
 }
@@ -160,7 +164,7 @@ function renderCategoryChips(room) {
       const active = selectedSet.has(cat.id);
       const cantDeselect = active && onlyOne;
       // count = persons in this category that also match selected countries
-      const count = base.filter(pr => pr.category === cat.id && (!pr.country || selCtr.has(pr.country))).length;
+      const count = base.filter(pr => _resolveCategory(pr) === cat.id && (!_resolveCountry(pr) || selCtr.has(_resolveCountry(pr)))).length;
       return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
     }).join('');
   }
@@ -179,7 +183,7 @@ function renderCountryChips(room) {
     const active = selectedSet.has(ctr.id);
     const cantDeselect = active && onlyOne;
     // count = persons of this country that also match selected categories
-    const count = base.filter(pr => pr.country === ctr.id && (!pr.category || selCat.has(pr.category))).length;
+    const count = base.filter(pr => _resolveCountry(pr) === ctr.id && (!_resolveCategory(pr) || selCat.has(_resolveCategory(pr)))).length;
     return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCountry('${ctr.id}')" ${cantDeselect ? 'disabled' : ''}>${ctr.icon} ${ctr.label}<span class="cat-chip-count">${count}</span></button>`;
   }).join('');
 }
@@ -412,6 +416,31 @@ async function joinRoom(name, code) {
 }
 
 // ── Room Subscription ────────────────────────────────────────────────────
+function resetToJoin() {
+  if(roomRef){roomRef.off();roomRef=null;}
+  if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
+  roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;
+  roundEndedFlag=false;hasGuessedThisRound=false;hasSkippedThisRound=false;
+  processedGuessUids.clear();
+  currentPoolSize=PERSONS.length;currentRoomSnapshot=null;
+  const startBtn=document.getElementById('btn-start');
+  if(startBtn){startBtn.disabled=false;startBtn.textContent='Spiel starten 🚀';}
+  clearJoinError(); showScreen('join');
+}
+
+async function leaveRoom() {
+  const code=roomCode;
+  if(!code) return;
+  try {
+    if(isHost) {
+      await db.ref(`rooms/${code}`).remove();
+    } else {
+      await db.ref(`rooms/${code}/players/${uid}`).remove();
+    }
+  } catch(e) { console.warn('leaveRoom error:', e); }
+  resetToJoin();
+}
+
 function subscribeRoom() {
   if(roomRef){roomRef.off();roomRef=null;}
   roomRef=db.ref(`rooms/${roomCode}`);
@@ -800,17 +829,8 @@ window.addEventListener('DOMContentLoaded', async()=>{
   });
   document.getElementById('btn-show-leaderboard').onclick=showLeaderboard;
   document.getElementById('btn-leaderboard-back').onclick=()=>showScreen('join');
-  document.getElementById('btn-play-again').onclick=()=>{
-    if(roomRef){roomRef.off();roomRef=null;}
-    if(hostTimerInterval){clearInterval(hostTimerInterval);hostTimerInterval=null;}
-    roomCode='';isHost=false;lastRoomState=null;lastCurrentRound=-99;
-    roundEndedFlag=false;hasGuessedThisRound=false;hasSkippedThisRound=false;
-    processedGuessUids.clear();
-    currentPoolSize=PERSONS.length;currentRoomSnapshot=null;
-    const startBtn=document.getElementById('btn-start');
-    startBtn.disabled=false; startBtn.textContent='Spiel starten 🚀';
-    clearJoinError(); showScreen('join');
-  };
+  document.getElementById('btn-play-again').onclick=resetToJoin;
+  document.getElementById('btn-leave-lobby').onclick=leaveRoom;
 
   try { await initFirebase(); }
   catch(e) { alert('Firebase Fehler: '+e.message+'\n\nBitte firebase-config.js prüfen.'); }
