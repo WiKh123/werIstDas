@@ -178,39 +178,44 @@ async function toggleCountry(ctrId) {
 }
 
 function renderCategoryChips(room) {
+  const p = room && room.personPool;
+  const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
+  const selCtr = new Set(getSelectedCountries(room));
+  const selectedSet = new Set(getSelectedCats(room));
+  const onlyOne = selectedSet.size === 1;
+  const chipsHTML = readonly => CATEGORY_META.map(cat => {
+    const active = selectedSet.has(cat.id);
+    // count = persons in this category that also match selected countries
+    const count = base.filter(pr => _resolveCategory(pr) === cat.id && (!_resolveCountry(pr) || selCtr.has(_resolveCountry(pr)))).length;
+    if (readonly) return `<button class="cat-chip readonly${active ? ' active' : ''}">${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
+    const cantDeselect = active && onlyOne;
+    return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
+  }).join('');
   const container = document.getElementById('category-chips');
-  if (container) {
-    const p = room && room.personPool;
-    const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
-    const selCtr = new Set(getSelectedCountries(room));
-    const selectedSet = new Set(getSelectedCats(room));
-    const onlyOne = selectedSet.size === 1;
-    container.innerHTML = CATEGORY_META.map(cat => {
-      const active = selectedSet.has(cat.id);
-      const cantDeselect = active && onlyOne;
-      // count = persons in this category that also match selected countries
-      const count = base.filter(pr => _resolveCategory(pr) === cat.id && (!_resolveCountry(pr) || selCtr.has(_resolveCountry(pr)))).length;
-      return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCategory('${cat.id}')" ${cantDeselect ? 'disabled' : ''}>${cat.icon} ${cat.label}<span class="cat-chip-count">${count}</span></button>`;
-    }).join('');
-  }
+  if (container) container.innerHTML = chipsHTML(false);
+  const guestContainer = document.getElementById('guest-category-chips');
+  if (guestContainer) guestContainer.innerHTML = chipsHTML(true);
   renderCountryChips(room);
 }
 
 function renderCountryChips(room) {
-  const container = document.getElementById('country-chips');
-  if (!container) return;
   const p = room && room.personPool;
   const base = p ? (Array.isArray(p) ? p : Object.values(p)) : PERSONS;
   const selCat = new Set(getSelectedCats(room));
   const selectedSet = new Set(getSelectedCountries(room));
   const onlyOne = selectedSet.size === 1;
-  container.innerHTML = COUNTRY_META.map(ctr => {
+  const chipsHTML = readonly => COUNTRY_META.map(ctr => {
     const active = selectedSet.has(ctr.id);
-    const cantDeselect = active && onlyOne;
     // count = persons of this country that also match selected categories
     const count = base.filter(pr => _resolveCountry(pr) === ctr.id && (!_resolveCategory(pr) || selCat.has(_resolveCategory(pr)))).length;
+    if (readonly) return `<button class="cat-chip readonly${active ? ' active' : ''}">${ctr.icon} ${ctr.label}<span class="cat-chip-count">${count}</span></button>`;
+    const cantDeselect = active && onlyOne;
     return `<button class="cat-chip${active ? ' active' : ''}" onclick="toggleCountry('${ctr.id}')" ${cantDeselect ? 'disabled' : ''}>${ctr.icon} ${ctr.label}<span class="cat-chip-count">${count}</span></button>`;
   }).join('');
+  const container = document.getElementById('country-chips');
+  if (container) container.innerHTML = chipsHTML(false);
+  const guestContainer = document.getElementById('guest-country-chips');
+  if (guestContainer) guestContainer.innerHTML = chipsHTML(true);
 }
 
 function renderPoolScreen(room) {
@@ -291,6 +296,9 @@ function shuffle(arr) {
   const a=[...arr];
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
+}
+function syncRoundsSetting() {
+  if(isHost&&roomCode) db.ref(`rooms/${roomCode}/roundsSetting`).set(roundsCount).catch(()=>{});
 }
 function norm(s) {
   return String(s).toLowerCase().trim()
@@ -405,6 +413,7 @@ async function createRoom(name) {
     personPool:defaultPool,
     selectedCategories: loadStoredCats(),
     selectedCountries: loadStoredCtrs(),
+    roundsSetting: roundsCount,
     rounds:null, totalRounds:null, currentRound:-1,
     timeLeft:30, roundResult:null, currentImageUrl:'',
     players:{[uid]:{name,score:0,hasGuessed:false}},
@@ -487,12 +496,21 @@ function handleRoom(room) {
     if(rdisplay && roundsCount>currentPoolSize){
       roundsCount=Math.max(3,currentPoolSize);
       rdisplay.textContent=roundsCount;
+      if(isHost && room.roundsSetting!==roundsCount) syncRoundsSetting();
     }
     renderCategoryChips(room);
     if(document.getElementById('screen-pool').classList.contains('active')){
       renderPoolScreen(room);
     }
     if(host===uid&&!isHost){isHost=true;document.getElementById('host-controls').classList.remove('hidden');document.getElementById('waiting-msg').classList.add('hidden');}
+    const guestBox=document.getElementById('guest-settings');
+    if(guestBox) guestBox.classList.toggle('hidden', isHost);
+    if(!isHost){
+      const gpc=document.getElementById('guest-pool-count');
+      if(gpc) gpc.textContent=pool.length+' Personen';
+      const gr=document.getElementById('guest-rounds');
+      if(gr) gr.textContent=room.roundsSetting||10;
+    }
     if(isHost){const sb=document.getElementById('btn-start');if(sb&&sb.disabled){sb.disabled=false;sb.textContent='Spiel starten 🚀';}}
     lastRoomState='lobby'; return;
   }
@@ -817,8 +835,8 @@ window.addEventListener('DOMContentLoaded', async()=>{
     if(saved) document.getElementById('player-name').value=saved;
   } catch {}
   const rdisplay=document.getElementById('rounds-display');
-  document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;}};
-  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(50,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;}};
+  document.getElementById('rounds-minus').onclick=()=>{if(roundsCount>3){roundsCount--;rdisplay.textContent=roundsCount;syncRoundsSetting();}};
+  document.getElementById('rounds-plus').onclick=()=>{if(roundsCount<Math.min(50,currentPoolSize)){roundsCount++;rdisplay.textContent=roundsCount;syncRoundsSetting();}};
 
   document.getElementById('btn-create').onclick=async()=>{
     const name=document.getElementById('player-name').value.trim();
